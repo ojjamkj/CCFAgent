@@ -8,8 +8,11 @@ import com.gtone.cf.daemon.cmd.BaseCommand;
 import com.gtone.cf.rt.connect.IConnector;
 import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileManager;
+import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.CheckSumUtil;
 import com.gtone.cf.util.ICFConstants;
+
+import jspeed.base.util.StringHelper;
 
 public class CCommandExample {
 
@@ -17,10 +20,16 @@ public class CCommandExample {
 		// TODO Auto-generated method stub
 		try {
 			CCommandExample obj = new CCommandExample();
-			//1.ping
-			obj.ping();
-			//2.createFIle
-			obj.createFile();
+			//1.CMD_AGENT_PING
+//			obj.ping();
+			//2.CMD_CREATEFILE
+//			obj.createFile();
+			//3.CMD_VIEWFILE
+//			obj.viewFile();
+			//4.CMD_BUILD
+//			obj.build();
+			//5.CMD_DELETEFILE
+			obj.deleteFile();
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -84,7 +93,92 @@ public class CCommandExample {
 		}
 	}
 
+	public void viewFile() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		String toFile = "D:/temp/A.java";
+		byte[] source = FileManager.viewFile(toFile);
+		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
+		inHash.put("TARGET_PATH", "D:/temp"); 
+		
 
+
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_VIEWFILE );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			FileModel fileModel = (FileModel)resultCmd.getResultData();
+			System.out.println(resultCmd.getResultData());
+			System.out.println(fileModel.getFileSource());
+		}
+	}
+	
+	public void build() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+
+		inHash.put("BUILD_LOC", "D:/50_INSTALL/SampleBiz/dev/eachCall.bat"); //원격지 파일 경로
+		inHash.put("BUILD_FILE_TYPE", "0"); 
+		inHash.put("BUILD_PARAM", new String[] {"param1"});
+		inHash.put("LOG_TYPE", "CONSOLE");
+		inHash.put("BUILD_OUTPUT", "");
+
+		BaseCommand cmd = new FileDeployCommand(  BaseCommand.CMD_BUILD );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_BUILD);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			System.out.println(StringHelper.evl(resultCmd.getResultData(), ""));
+		}
+		
+	}
+	
+	public void deleteFile() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		String toFile = "D:/temp/A.java";
+		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
+		
+
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DELETEFILE );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			System.out.println(resultCmd.getResultData());
+		}
+	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//공통 (건들지 마세요)
 	public IConnector getConnector(String machineType, String connectType){
@@ -156,3 +250,4 @@ public class CCommandExample {
 
 
 }
+
