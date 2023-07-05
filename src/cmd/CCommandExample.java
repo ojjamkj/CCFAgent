@@ -1,9 +1,14 @@
 package cmd;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import com.gtone.cf.daemon.cmd.BaseCommand;
 import com.gtone.cf.rt.connect.IConnector;
@@ -22,7 +27,7 @@ public class CCommandExample {
 		try {
 			CCommandExample obj = new CCommandExample();
 			//1.CMD_AGENT_PING
-//			obj.ping();
+			obj.ping();
 			//2.CMD_CREATEFILE
 //			obj.createFile();
 			//3.CMD_VIEWFILE
@@ -32,7 +37,13 @@ public class CCommandExample {
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();
 			//6.CMD_DOSEARCH_ONLY_FILE
-			obj.searchOnlyFile();
+//			obj.searchOnlyFile();
+			//7.CMD_DOSEARCH_ONLY_DIR
+//			obj.searchOnlyDir();
+			//8.CMD_VIEWDIR
+//			obj.viewDir();
+			//9.CMD_SCANDIR_TO_FILE		
+//			obj.scanToFile();
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -229,6 +240,141 @@ public class CCommandExample {
 			}	
 		}
 	}
+	
+	
+	public void searchOnlyDir() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		
+		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		
+		
+		
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_DIR );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			ArrayList<String> files = (ArrayList<String>)resultCmd.getResultData();
+			for(String dir : files)
+			{
+				System.out.println(dir);
+				
+			}	
+		}
+	}
+	
+	
+	public void viewDir() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		ArrayList includeFilter = new ArrayList();
+		includeFilter.add("/*.java");
+		ArrayList ignoreFilter = new ArrayList();
+		ignoreFilter.add("**.bak");
+		
+		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("INCLUDE_SUB_DIR", "Y"); //하위 디렉토리 포함 여부
+		inHash.put("TARGET_REGEXP", ""); //검색 정규식, 옵션
+		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
+		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션
+		inHash.put("START_ROW", "0"); //옵션
+		inHash.put("DEFAULT_GET_ROWS", "500"); //옵션
+		
+		
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_VIEWDIR );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
+			for(FileModel model : files)
+			{
+				System.out.println(model.getPath());
+				System.out.println(model.getSize());
+				System.out.println(model.getCanRead());
+				System.out.println(model.isCanWrite());
+				System.out.println(model.getFilename());
+				System.out.println(model.getFileSource());
+				System.out.println(model.isDirectory());
+				System.out.println(model.getLastModifiedDate());
+				System.out.println(model.getLength());
+				System.out.println(model.getParent());
+				System.out.println(model.getRelPath());
+				System.out.println(model.getRootPath());
+				System.out.println(model.getType());
+				System.out.println("");
+			}	
+		}
+	}
+	
+	public void scanToFile() throws Exception
+	{
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		ArrayList includeFilter = new ArrayList();
+		includeFilter.add("/*.java");
+		ArrayList ignoreFilter = new ArrayList();
+		ignoreFilter.add("**.bak");
+		
+		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
+		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
+		inHash.put("INCLUDE_CHECKSUM", "Y"); //체크썸 포함 여부
+		inHash.put("INCLUDE_CHECKSUM_TYPE", "CRC"); //검색 정규식, 옵션
+		
+		
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_SCANDIR_TO_FILE );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			FileModel model = (FileModel)resultCmd.getResultData();
+			
+			byte[] scanFileSource = model.getFileSource();
+			String savedFile = "d:/Temp/scanResultFile.txt";
+			String unzipFile = "d:/Temp/unzipScanResultFile.txt";
+			FileManager.createFile(scanFileSource, "d:/Temp/scanResultFile.txt");
+			unzip(savedFile, new File(unzipFile));
+			//아래는 리턴값 샘플, 뉴라인키가 각 데이터의 구분자, 파일은 utf-8로 생성되어야함.
+			/** 
+			 * 
+			 * {NAME : "build.bat",ISDIR : false,MDATE : "20201014145445",PATH : "D:/50_INSTALL/SampleBiz/real/build.bat",RELPATH : "build.bat",ROOTPATH : "D:/50_INSTALL/SampleBiz/real",READ : true,WRITE : true,SIZE : 24,CHECKSUM : "f38249f"}
+{NAME : "build1.bat",ISDIR : false,MDATE : "20201014145445",PATH : "D:/50_INSTALL/SampleBiz/real/build1.bat",RELPATH : "build1.bat",ROOTPATH : "D:/50_INSTALL/SampleBiz/real",READ : true,WRITE : true,SIZE : 24,CHECKSUM : "f38249f"}
+{NAME : "eachCall.bat",ISDIR : false,MDATE : "20200123131312",PATH : "D:/50_INSTALL/SampleBiz/real/eachCall.bat",RELPATH : "eachCall.bat",ROOTPATH : "D:/50_INSTALL/SampleBiz/real",READ : true,WRITE : true,SIZE : 28,CHECKSUM : "d10d75a8"}
+
+			 */
+		}
+	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//공통 (건들지 마세요)
 	public IConnector getConnector(String machineType, String connectType){
@@ -295,6 +441,40 @@ public class CCommandExample {
 		}
 
 	}
+	
+	protected void unzip(String zipFile, File unzipFileName) {
+
+        FileInputStream fileInputStream = null;	
+        FileOutputStream fileOutputStream = null;
+        ZipInputStream zipInputStream = null;
+        try {
+            fileInputStream = new FileInputStream(zipFile);
+            zipInputStream = new ZipInputStream(fileInputStream);
+            ZipEntry zipEntry = null;
+            
+            byte[] buf = new byte[1024];
+            int length = 0;
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                fileOutputStream = new FileOutputStream(unzipFileName);                
+                
+    			while ((length = zipInputStream.read(buf)) != -1) {
+                    fileOutputStream.write(buf, 0, length);
+                }
+
+                zipInputStream.closeEntry();
+                fileOutputStream.flush();
+                fileOutputStream.close();
+            }
+            zipInputStream.close();
+        } catch (IOException e) {
+            // Exception Handling
+        } finally {
+            if(zipInputStream != null) try {zipInputStream.closeEntry(); }catch(Exception e) {}
+            if(fileOutputStream != null) try {fileOutputStream.flush(); }catch(Exception e) {}
+            if(fileOutputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+            if(zipInputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+        }
+    }
 
 
 
