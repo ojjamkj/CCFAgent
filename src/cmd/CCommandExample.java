@@ -2,6 +2,7 @@ package cmd;
 
 import java.io.File;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import com.gtone.cf.daemon.cmd.BaseCommand;
@@ -29,7 +30,9 @@ public class CCommandExample {
 			//4.CMD_BUILD
 //			obj.build();
 			//5.CMD_DELETEFILE
-			obj.deleteFile();
+//			obj.deleteFile();
+			//6.CMD_DOSEARCH_ONLY_FILE
+			obj.searchOnlyFile();
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -177,6 +180,53 @@ public class CCommandExample {
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
 			System.out.println(resultCmd.getResultData());
+		}
+	}
+	
+	public void searchOnlyFile() throws Exception
+	{
+		//NotFoundDirException | FileNotFoundException 에 대한 에러 처리 반드시 필요...원격에서 오류가 발생한 경우 반드시 서버로 해당 오류를 보내주어야함.
+		
+		HashMap inHash = new HashMap();
+		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "30502");
+		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("MACHINE_TYPE", "S");
+		
+		//배포시 파라미터 케이스2 (정규식 사용,)
+		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real/java"); //가져올 파일 수집 최상위 경로
+		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
+//		inHash.put("TARGET_REGEXP", ".*"); //정규식 2번 예시 - 하위 디렉토리 모든 파일 
+//		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression($.*)?.class"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
+		
+		
+		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_FILE );
+		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+		cmd.setValue(ICFConstants.HASHMAP, inHash);
+		cmd.setMultiple(false);
+		
+		//여기서 
+		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+		if( !resultCmd.isSuccess() )
+			throw new Exception( resultCmd.getErrorMessage() );
+		else {
+			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
+			for(FileModel model : files)
+			{
+				System.out.println(model.getPath());
+				System.out.println(model.getSize());
+				System.out.println(model.getCanRead());
+				System.out.println(model.isCanWrite());
+				System.out.println(model.getFilename());
+				System.out.println(model.getFileSource());
+				System.out.println(model.isDirectory());
+				System.out.println(model.getLastModifiedDate());
+				System.out.println(model.getLength());
+				System.out.println(model.getParent());
+				System.out.println(model.getRelPath());
+				System.out.println(model.getRootPath());
+				System.out.println(model.getType());
+			}	
 		}
 	}
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
