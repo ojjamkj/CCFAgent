@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
@@ -21,24 +20,24 @@ import com.gtone.cf.util.ICFConstants;
 
 import jspeed.base.util.StringHelper;
 
-public class CCommandExample {
+public class CCommandExample2 {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
-			CCommandExample obj = new CCommandExample();
+			CCommandExample2 obj = new CCommandExample2();
 			//1.CMD_AGENT_PING
-//			obj.ping();
+// 			obj.ping(); 			// 일부처리
 			//2.CMD_CREATEFILE
-//			obj.createFile();
+//			obj.createFile();		// 일부처리
 			//3.CMD_VIEWFILE
-			obj.viewFile();
+//			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
 //			obj.build();
 			//5.CMD_DELETEFILE
-//			obj.deleteFile();
+//			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-//			obj.searchOnlyFile();
+			obj.searchOnlyFile();
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
@@ -54,8 +53,10 @@ public class CCommandExample {
 	public void ping() throws Exception
 	{
 		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_IP", "172.16.15.15");
+		inHash.put("TARGET_PORT", "34000");
+//		inHash.put("TARGET_IP", "127.0.0.1");
+//		inHash.put("TARGET_PORT", "30502");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 
@@ -70,27 +71,35 @@ public class CCommandExample {
 		if( !resultCmd.isSuccess() )
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
-			System.out.println(resultCmd.getResultData());
+			
+			System.out.println("API-ping: resultCmd.getMessage():"+resultCmd.getMessage());
+//			System.out.println(resultCmd.getResultData());
 		}
 	}
 	
 	public void createFile() throws Exception
 	{
 		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_IP", "172.16.15.15");
+//		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "34000");
+//		inHash.put("TARGET_IP", "127.0.0.1");
+//		inHash.put("TARGET_PORT", "30502");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
-		String toFile = "D:/temp/TOFILE/AAA.XML";
-		String fromFile = "D:/temp/FROMFILE/AAA.xml";
+		String toFile = "/home/cf/tofile/AAA.XML";
+//		String fromFile = "D:/temp/FROMFILE/AAA.xml";
+//		String toFile = "/home/cf//tofile/AAA.XML";
+		String fromFile ="D:\\temp\\tofile\\AAA.XML";
 		byte[] source = FileManager.viewFile(fromFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
-		inHash.put("FILE_SOURCE", FileManager.viewFile(fromFile)); //
+//		inHash.put("FILE_SOURCE", Base64.getEncoder().encodeToString(FileManager.viewFile(fromFile) )); //
+		inHash.put("FILE_SOURCE", FileManager.viewFile(fromFile) ); //
 		inHash.put("TARGET_PATH", "D:/temp"); 
 		inHash.put("FILE_CHECKSUM", CheckSumUtil.getCheckSum(source, "2"));
 		inHash.put("CHECKSUM_TYPE", "2"); //sha256		
-		inHash.put("FILE_LAST_MODIFIED", new File(fromFile).lastModified());
+		inHash.put("FILE_LAST_MODIFIED", new File(fromFile).lastModified() );
 		inHash.put("FILE_PERMISSION", "755");
 
 
@@ -104,38 +113,41 @@ public class CCommandExample {
 		if( !resultCmd.isSuccess() )
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
-			System.out.println(resultCmd.getResultData());
+			System.out.println("API-createFile: resultCmd.getMessage():"+resultCmd.getMessage());
 		}
+		
 	}
 
 	public void viewFile() throws Exception
 	{
 		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_IP", "172.16.15.15");
+//		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "34000");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
-		String toFile = "D:\\temp\\FROMFILE\\AAA.XML";
-		byte[] source = FileManager.viewFile(toFile);
+//		String toFile = "/home/cf/Dev/Src/Admin/BREXDiag.cpp";
+		String toFile = "/home/cf/Dev//Bin/LINUX/cfagent";
+//		byte[] source = FileManager.viewFile(toFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
 		inHash.put("TARGET_PATH", "D:/temp"); 
 		
-
+ 
 
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_VIEWFILE );
 		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
 		cmd.setValue(ICFConstants.HASHMAP, inHash);
 		cmd.setMultiple(false);
-		 
+		
 		//여기서 
 		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
 		if( !resultCmd.isSuccess() )
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
-			FileModel fileModel = (FileModel)resultCmd.getResultData();
-			System.out.println(resultCmd.getResultData());
-			System.out.println(fileModel.getFileSource());
+//			FileModel fileModel = (FileModel)resultCmd.getResultData();
+//			System.out.println(resultCmd.getResultData());
+//			System.out.println(fileModel.getFileSource());
 		}
 	}
 	
@@ -172,12 +184,13 @@ public class CCommandExample {
 	public void deleteFile() throws Exception
 	{
 		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_IP", "172.16.15.15");  
+//		inHash.put("TARGET_IP", "127.0.0.1");
+		inHash.put("TARGET_PORT", "34000");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
-		String toFile = "D:/temp/A.java";
+		String toFile = "/home/cf/temp/a001";
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
 		
 
@@ -189,9 +202,10 @@ public class CCommandExample {
 		//여기서 
 		BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
 		if( !resultCmd.isSuccess() )
-			throw new Exception( resultCmd.getErrorMessage() );
+			System.out.println("API-deleteFile: resultCmd.getMessage():"+resultCmd.getMessage());
+//			throw new Exception( resultCmd.getErrorMessage() );
 		else {
-			System.out.println(resultCmd.getResultData());
+			System.out.println("API-deleteFile: resultCmd.getMessage():"+resultCmd.getMessage());
 		}
 	}
 	
@@ -200,14 +214,14 @@ public class CCommandExample {
 		//NotFoundDirException | FileNotFoundException 에 대한 에러 처리 반드시 필요...원격에서 오류가 발생한 경우 반드시 서버로 해당 오류를 보내주어야함.
 		
 		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_IP", "172.16.15.15");
+		inHash.put("TARGET_PORT", "34000");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
 		//배포시 파라미터 케이스2 (정규식 사용,)
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real/java"); //가져올 파일 수집 최상위 경로
-		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
+		inHash.put("TARGET_PATH", "/home/cf/temp/java"); //가져올 파일 수집 최상위 경로
+		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
 //		inHash.put("TARGET_REGEXP", ".*"); //정규식 2번 예시 - 하위 디렉토리 모든 파일 
 //		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression($.*)?.class"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
 		
@@ -413,16 +427,18 @@ public class CCommandExample {
 		BaseCommand runCmd = cmd;
 
 
-		IConnector connector = getConnector(machineType, connectType);
-
-		connector.setIp(ip);
-		connector.setPort(port);
+//		IConnector connector = getConnector(machineType, connectType);
+//
+//		connector.setIp(ip);
+//		connector.setPort(port);
 
 		Object conn = null;
 		try
 		{
-			conn = makeConnection(globalMap, param, connector,runCmd.isMultiple()  );
-			BaseCommand result = connector.connect(runCmd);
+//			conn = makeConnection(globalMap, param, connector,runCmd.isMultiple()  );
+//			BaseCommand result = connector.connect(runCmd);
+			CAgentConnector2 ca2 = new CAgentConnector2();
+			BaseCommand result =ca2.remoteCmdRun(globalMap, param, runCmd);
 			return result;
 		}
 		catch(Exception e)
@@ -431,16 +447,16 @@ public class CCommandExample {
 		}
 		finally
 		{
-			if(conn != null && !runCmd.isMultiple())
-			{
-				connector.close(conn);
-				if( param.containsKey(Socket.class.getName())) {
-					param.remove(Socket.class.getName());
-				}
-			}
+//			if(conn != null && !runCmd.isMultiple())
+//			{
+//				connector.close(conn);
+//				if( param.containsKey(Socket.class.getName())) {
+//					param.remove(Socket.class.getName());
+//				}
+//			}
 		}
 
-	}
+	} 
 	
 	protected void unzip(String zipFile, File unzipFileName) {
 
