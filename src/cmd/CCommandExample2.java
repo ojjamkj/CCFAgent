@@ -1,5 +1,28 @@
 package cmd;
+/*
+TEST server ==> 172.16.15.15  putty : cf / gtone1004
 
+1.기동   cd /home/cf/Bin
+ cfagent ./BRMCONF.ini  ( BRMCONF1.ini 는 현재 의미 없음.. 추후 변경 예정 ) 
+
+2.컴파일
+cd /home/cf/Dev/Build
+컴파일 명령어 :   engine.scr
+결과 파일 :   /home/cf/Dev//Bin/LINUX//cfagent
+서버 관련 주요 소스 
+ 2.1 /home/cf/Dev/Src/Admin/ 
+    BRMiner.cpp   ->MainProcess()함수에 기능에 따라 CFAPI.API03_PING .. 함수 호출
+    BRStart.cpp
+2.2 /home/cf/Dev/CFAPI
+    CFAPI.cpp     --> 기능별로 함수 분리되어 있음..
+2.3 /home/cf/Dev/Include
+    CFAPI.h
+    MTUtil.h
+2.4 /home/cf/Dev/Src/Util
+    MTUtil.cpp   -> CFAPI, MTUtil 에 cfagent 프로그램에서 필요한 함수가 양쪽으로 나뉘어짐 .. 하나로 합쳐야 함..
+
+*/
+      
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
