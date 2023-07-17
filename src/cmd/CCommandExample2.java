@@ -4,7 +4,8 @@ TEST server ==> 172.16.15.15  putty : cf / gtone1004
 
 1.기동   cd /home/cf/Bin
  cfagent ./BRMCONF.ini  ( BRMCONF1.ini 는 현재 의미 없음.. 추후 변경 예정 ) 
-
+  구동시 기본 포트 : 34000(실제 사용포트 ), 34001(추후 제거대상 포트 : 소스 로직 미 분리로 아직 살아 있음 . ) 
+            ==> 해당 포트 정보는 MRLODRUL.cpp 에 존재 ( 해당 소스도 추후 삭제 예정 ).
 2.컴파일
 cd /home/cf/Dev/Build
 컴파일 명령어 :   engine.scr
