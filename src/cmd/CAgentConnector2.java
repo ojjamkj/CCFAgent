@@ -192,9 +192,12 @@ public class CAgentConnector2 {
 		CFAPI5J conn = new CFAPI5J();
 		String ip = (String)param.get(ICFConstants.TARGET_IP);
 		int port = Integer.parseInt( (String)param.get(ICFConstants.TARGET_PORT));
+		
 		BaseCommand resultCmd = null;
 		conn.brexPrimary=ip;
 		conn.brexPort=port;
+
+		System.out.println(":remoteCmdRun"+ip+":"+port);
 		conn.Initialize("" + cmd.getCommand()); //CMD_DELETEFILE
 		switch(cmd.getCommand()) {
 		case BaseCommand.CMD_AGENT_PING:
