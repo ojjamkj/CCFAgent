@@ -66,10 +66,10 @@ public class CAgentConnector2 {
 		boolean status=false;
 		String msg="";
 		try {
-			conn.WriteString("aaaaaaaaaaa");
 			conn.MBRS_Run();
 			
 			status = conn.ReadInt()==0 ? true:false ;
+			
 			msg=conn.ReadString();
 			cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
 		} catch (Exception e) {

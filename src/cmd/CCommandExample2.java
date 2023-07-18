@@ -4,7 +4,7 @@ TEST server ==> 172.16.15.15  putty : cf / gtone1004
 
 1.기동   cd /home/cf/Bin
  cfagent ./BRMCONF.ini  ( BRMCONF1.ini 는 현재 의미 없음.. 추후 변경 예정 ) 
-  구동시 기본 포트 : 34000(실제 사용포트 ), 34001(추후 제거대상 포트 : 소스 로직 미 분리로 아직 살아 있음 . ) 
+  구동시 기본 포트 : 35400(실제 사용포트 ), 35401(추후 제거대상 포트 : 소스 로직 미 분리로 아직 살아 있음 . ) 
             ==> 해당 포트 정보는 MRLODRUL.cpp 에 존재 ( 해당 소스도 추후 삭제 예정 ).
 2.컴파일
 cd /home/cf/Dev/Build
@@ -53,7 +53,7 @@ public class CCommandExample2 {
 			//1.CMD_AGENT_PING
 // 			obj.ping(); 			// 일부처리
 			//2.CMD_CREATEFILE
-//			obj.createFile();		// 일부처리
+//			obj.createFile();		// 일부처리0
 			//3.CMD_VIEWFILE
 //			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
@@ -245,6 +245,7 @@ public class CCommandExample2 {
 		
 		//배포시 파라미터 케이스2 (정규식 사용,)
 		inHash.put("TARGET_PATH", "/home/cf/temp/java"); //가져올 파일 수집 최상위 경로
+//		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
 		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
 //		inHash.put("TARGET_REGEXP", ".*"); //정규식 2번 예시 - 하위 디렉토리 모든 파일 
 //		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression($.*)?.class"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
