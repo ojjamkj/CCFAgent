@@ -239,7 +239,7 @@ public class CCommandExample2 {
 		
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "36400");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
@@ -452,7 +452,7 @@ public class CCommandExample2 {
 		BaseCommand runCmd = cmd;
 
 
-//		IConnector connector = getConnector(machineType, connectType);
+		IConnector connector = getConnector(machineType, connectType);
 //
 //		connector.setIp(ip);
 //		connector.setPort(port);
@@ -463,6 +463,7 @@ public class CCommandExample2 {
 //			conn = makeConnection(globalMap, param, connector,runCmd.isMultiple()  );
 //			BaseCommand result = connector.connect(runCmd);
 			CAgentConnector2 ca2 = new CAgentConnector2();
+			
 			BaseCommand result =ca2.remoteCmdRun(globalMap, param, runCmd);
 			return result;
 		}
