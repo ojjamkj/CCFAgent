@@ -1,0 +1,162 @@
+#ifdef _MSG_KO
+#define MSG_DBCONN_ERR    "DataBase(%s) 연결 오류. %d"
+#define MSG_DB_CONNECT    "DB 연결 : %s %s ???"
+#else
+#define MSG_DBCONN_ERR    "DataBase(%s) Connect Error. %d"
+#define MSG_DB_CONNECT    "DB Connect : %s %s ???"
+#endif
+
+#include   <stdio.h>
+#include   <stdlib.h>
+//#include   <oraca.h>
+#ifdef  __hpux
+	#include   <strings.h>
+#else	
+	#include   <string.h>
+#endif
+
+//#include   <sqlca.h>
+
+//EEXEC SQL INCLUDE SQLCA.H;
+
+#ifndef  SQLCODE
+		#define  SQLCODE   sqlca.sqlcode
+#endif
+
+#ifndef  SQLMESSAGE
+	#define  SQLMESSAGE   ((char*)sqlca.sqlerrm.sqlerrmc)
+#endif
+
+/*2013.10.17 ad2001 암호화로 길이를 32->201으로 늘린다.
+char               _DBPASSWORD[32]; //  QUALIFIER
+*/    
+char			   _DBHOST[201];
+char               _DBNAME[30];     //  SUBSYSTEM  31->201(20200630)
+char               _DBUSER[31];     //  PACKAGE
+char               _DBPASSWORD[201]; //  QUALIFIER
+char			   _DBPWD_ENC[3];
+unsigned long			   _DBPORT;
+unsigned long			   _SERVERID;
+
+/* EXEC SQL CONTEXT USE :ctxConn; */  
+
+//#include   "MTCSComm.h"
+
+
+long  AllocThreadCtx( void **ctxParm )
+{
+EXEC SQL    BEGIN DECLARE SECTION;
+	sql_context ctxConn;
+EXEC SQL    END DECLARE SECTION;
+	struct sqlca    sqlca;
+
+	EXEC SQL ENABLE THREADS;
+
+	EXEC SQL CONTEXT ALLOCATE :ctxConn;
+	
+	*ctxParm = ctxConn;
+
+	return SQLCODE;
+}
+//EXEC SQL CONTEXT USE :ctxConn;
+long  AttatchThreadCtx( void *ctxParm, char *msg )
+{
+	return 0;
+}
+	
+int DetachThreadCtx( void *ctxParm )
+{
+EXEC SQL    BEGIN DECLARE SECTION;
+	sql_context ctxConn;
+EXEC SQL    END DECLARE SECTION;
+	struct sqlca    sqlca;
+	
+	ctxConn = ctxParm;
+	
+	EXEC SQL COMMIT;
+	
+	return 0;
+}	
+
+void FreeCtx( void **ctxParm )
+{
+EXEC SQL    BEGIN DECLARE SECTION;
+	 sql_context ctxConn;
+EXEC SQL    END DECLARE SECTION;
+	struct sqlca    sqlca;
+
+	if ( ! *ctxParm ) return;
+	
+	ctxConn = *ctxParm;
+
+	EXEC SQL ROLLBACK WORK RELEASE;
+
+   EXEC SQL CONTEXT FREE :ctxConn;
+}
+
+
+/*
+int ConnectDatabase( sql_context ctxParm,
+						   char *DBName, char *DBUser,
+                     char *DBPasswd, char *msg )
+*/    
+
+int ConnectDatabase( sql_context ctxParm, char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+    VARCHAR        uid[32];
+    VARCHAR        pwd[32];
+    VARCHAR        dbName[32];
+    sql_context    ctxConn;
+EXEC SQL END DECLARE SECTION; 
+
+    struct sqlca	sqlca;
+
+    strcpy( (char *) uid.arr, _DBUSER );
+    uid.len = strlen((char *) uid.arr);
+    strcpy( (char *) pwd.arr, _DBPASSWORD );
+    pwd.len = strlen((char *) pwd.arr);
+    strcpy( (char *) dbName.arr, _DBNAME );
+    dbName.len = strlen((char *) dbName.arr);
+
+    ctxConn = ctxParm;	
+
+    EXEC SQL CONNECT :uid IDENTIFIED BY :pwd USING :dbName;
+
+    if( SQLCODE != 0 ) {
+        EXEC SQL COMMIT WORK RELEASE;
+        
+        EXEC SQL CONNECT :uid IDENTIFIED BY :pwd USING :dbName;
+    }
+    
+    if( SQLCODE != 0 && SQLCODE !=-28002 ) { //-28002 패스워드 변경주기 메시지
+		sprintf( msg, "DataBase(%s) Connect Error. %d",
+				 _DBNAME, SQLCODE );
+//		printf( "%s : %s\n\n", msg, SQLMESSAGE );		
+
+        return -1;
+    }
+    if( SQLCODE ==-28002 ) { //-28002 패스워드 변경주기 메시지
+		printf("DataBase(%s) Connect Error. ORA-[%d] MSG: [%s]\n", _DBNAME, SQLCODE, SQLMESSAGE );
+	}
+   
+	
+	sprintf( msg, "DB Connect : %s %s ???", _DBNAME, _DBUSER );
+//	WriteLog( 0, ss );
+
+	return 0;
+}
+
+
+void  DisconnectDatabase( sql_context ctxParm )
+{
+EXEC SQL    BEGIN DECLARE SECTION;
+	 sql_context ctxConn;
+EXEC SQL    END DECLARE SECTION;
+	struct sqlca	sqlca;
+   
+   ctxConn = ctxParm;
+   
+	EXEC SQL COMMIT WORK RELEASE;
+
+}

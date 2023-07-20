@@ -134,7 +134,7 @@ public class CCommandExample {
 		else {
 			FileModel fileModel = (FileModel)resultCmd.getResultData();
 			System.out.println(resultCmd.getResultData());
-			System.out.println(fileModel.getFileSource());
+			System.out.println(fileModel.getFileSource()); //
 		}
 	}
 	
