@@ -60,7 +60,7 @@ static char Base64Pad = '=';
 int calculate_md5(const char* filename, const char* md5sum, char* error_msg);
 int calculate_sha256(const char* filename, const char* sha256sum, char* error_msg);
 unsigned short calculate_crc32(const char* filename, const char* crcsum, char* error_msg);
-void createFile(const char* filename, const unsigned char* data, size_t length, char *msg);
+int createFile(char* filename, const unsigned char* data, size_t length, char *msg);
 void printFileAttributes(const char* path);
 char * removeSlash(char* str);
 #endif    //   __INC_MTUTIL

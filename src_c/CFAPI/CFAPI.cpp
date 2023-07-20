@@ -1,5 +1,6 @@
 
 #include "CFAPI.h"
+#include <utime.h>
 
 CFAPI::CFAPI(){
 
@@ -238,7 +239,7 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 }
 void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {//createfile 
-	printf("OJJAMKJ ADD DEBUG LONG AAA\n");
+	printf("[CMD_CREATEFILE] \n");
     m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -247,6 +248,12 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	unsigned char *fileData;
 	long fileLength=0;
 	char filePath[1000];
+	char fileChecksum[100];
+	char fileLastModifiedDate[50];
+	char filePermission[10];
+	char fileChecksumType[10];
+
+	// 0. read parameter
 	m_ObjBuffer->ReadString(temp);//  
 
 	m_ObjBuffer->ReadString(filePath);//  
@@ -256,25 +263,20 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	fileLength = atol(temp);
 	printf("FILE_SIZE [%s] [%ld]\n", temp, fileLength );
 	fileData = (unsigned char *)malloc( fileLength+1);
-	m_ObjBuffer->ReadByteFile(fileData, fileLength);//  
-	createFile(filePath, fileData, fileLength, temp);
+	m_ObjBuffer->ReadByteFile(fileData, fileLength);
+	//printf("FILE-DATA [%s]\n", fileData);
 
-	printf("createFile [%s]\n", temp);
+	m_ObjBuffer->ReadString(fileChecksum);// 后蔼 0
+	printf("FILE_CHECKSUM [%s]\n", fileChecksum);
 
-	printf("FILE-DATA [%s]\n", fileData);
+	m_ObjBuffer->ReadString(fileChecksumType);// 后蔼 0
+	printf("CHECKSUM_TYPE [%s]\n", fileChecksumType);
 
-	m_ObjBuffer->ReadString(temp);// 后蔼 0
-	printf("FILE_CHECKSUM [%s]\n", temp);
+	m_ObjBuffer->ReadString(fileLastModifiedDate);// 后蔼 0
+	printf("FILE_LAST_MODIFIED [%s]\n", fileLastModifiedDate);
 
-	m_ObjBuffer->ReadString(temp);// 后蔼 0
-	printf("CHECKSUM_TYPE [%s]\n", temp);
-
-	m_ObjBuffer->ReadString(temp);// 后蔼 0
-	printf("FILE_LAST_MODIFIED [%s]\n", temp);
-
-	m_ObjBuffer->ReadString(temp);// 后蔼 0
-	printf("FILE_PERMISSION [%s]\n", temp);
-
+	m_ObjBuffer->ReadString(filePermission);// 后蔼 0
+	printf("FILE_PERMISSION [%s]\n", filePermission);
 
 	m_ObjBuffer->ReadString(temp);// 后蔼 0
 	printf("(03)[%s]\n", temp);
@@ -282,17 +284,115 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	m_ObjBuffer->ReadString(temp);// 后蔼 0
 	printf("(04)[%s]\n", temp);
 
+	// 1. create file
+	int createFileResult = 0;
+	createFileResult = createFile(filePath, fileData, fileLength, temp);
+
+	if(createFileResult != 1){
+
+		m_ObjBuffer->Clear1();
+		m_ObjBuffer->WriteLong((long)0);
+		m_ObjBuffer->WriteLong((long)0);
+
+		// final result
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString(temp); //message
+		printf("(end)[%s]\n", temp);
+
+		return;
+	}
+
+	// 2. compare checksum with two file
+	if (calculate_sha256(filePath, fileChecksum, temp)) {
+		printf("SHA-256 same file : [%s]\n", filePath);
+	}
+	else {
+		printf("SHA-256 error :[%s] \n", temp);
+		m_ObjBuffer->Clear1();
+		m_ObjBuffer->WriteLong((long)0);
+		m_ObjBuffer->WriteLong((long)0);
+
+		// final result
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString("Error while comparing file checksum"); //message
+		printf("(end)[%s]\n", temp);
+
+		return;
+	}
+
+	// 3. set last modified date of created file
+	size_t modifiedDateLength = strlen(fileLastModifiedDate);
+	if(modifiedDateLength){
+		struct utimbuf new_times;
+
+		char* endptr;
+		long modifiedDate;
+
+		modifiedDate = strtol(fileLastModifiedDate, &endptr, 10);
+
+		new_times.actime = time(NULL);  // Keep the access time the same
+		new_times.modtime = modifiedDate/1000;
+
+		if (utime(filePath, &new_times) == 0) {
+			printf("File modification date updated successfully. [%s]\n", filePath);
+		} else {
+			printf("Error while setting file modification date. [%s]\n", filePath);
+
+		    m_ObjBuffer->Clear1();
+		    m_ObjBuffer->WriteLong((long)0);
+		    m_ObjBuffer->WriteLong((long)0);
+
+		    // final result
+		    m_ObjBuffer->WriteString("false"); //result
+		    m_ObjBuffer->WriteString("Error while setting file modification date"); //message
+		    printf("(end)[%s]\n", temp);
+
+		    return;
+		}
+	}
+
+	// 4. set last modified date of created file
+	size_t filePermissionLength = strlen(filePermission);
+	if(filePermissionLength){
+		int octal_permissions = strtol(filePermission, NULL, 8);
+
+//		mode_t new_permissions = strtol(filePermission, NULL, 8);
+
+	    if (chmod(filePath, octal_permissions) == 0) {
+	        printf("File permissions changed successfully. [%s]\n", filePath);
+	    } else {
+	    	printf("Error while changing file permissions. [%s]\n", filePath);
+
+	        m_ObjBuffer->Clear1();
+   		    m_ObjBuffer->WriteLong((long)0);
+   		    m_ObjBuffer->WriteLong((long)0);
+
+   		    // final result
+	        m_ObjBuffer->WriteString("false"); //result
+	        m_ObjBuffer->WriteString("Error while changing file permissions"); //message
+	        printf("(end)[%s]\n", temp);
+
+	        return;
+
+	    }
+	}
+
+
+	// send result
 	m_ObjBuffer->Clear1();
 	m_ObjBuffer->WriteLong((long)0);
 	m_ObjBuffer->WriteLong((long)0);
 
-	m_ObjBuffer->WriteString("msg..");
+	// final result
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(""); //message
 
-	printf("(end)[%s]\n", temp);
+	printf("(end)\n");
 	//	for (int i = 0; i<1; i++) {
 //		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
 //	}
 }
+
 void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {//createfile 
 	m_pChildSoc = pChildSoc;

@@ -7,6 +7,8 @@ import java.util.HashMap;
 
 import com.cfagent.api.CFAPI5J;
 import com.gtone.cf.daemon.cmd.BaseCommand;
+import com.gtone.cf.rt.connect.impl.AbstractConnector;
+import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.ICFConstants;
 
@@ -61,38 +63,45 @@ import com.gtone.cf.util.ICFConstants;
 	public final static String CMD_TYPE_BUILD = "BUILD";
 	public final static String CMD_TYPE_COMMAND = "EXECUTE";
  */
-public class CAgentConnector2 {
+public class CAgentConnector2 extends AbstractConnector {
 	public BaseCommand CMD_AGENT_PING(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 		boolean status=false;
-		String msg="";
+		BaseCommand resultCmd = new FileDeployCommand();
+		
 		try {
 			conn.MBRS_Run();
 			
 			status = conn.ReadInt()==0 ? true:false ;
 			
-			msg=conn.ReadString();
-			cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
+			String msg=conn.ReadString();
+			cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			
+			// set result
+			HashMap dataHash = new HashMap();
+			dataHash.put(ICFConstants.CMD_RESULT, msg.toString());
+			resultCmd.setResult(true, null, dataHash);
+			resultCmd.setValue(ICFConstants.CMD_RESULT,"true");
+			
 		} catch (Exception e) {
-			cmd.setResult(status, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
+			resultCmd.setResult(status, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
 			e.printStackTrace();
 		}
-		System.out.println("01:"+cmd.toString());
-		return cmd;
+		return resultCmd;
 	} 
 	
 	public BaseCommand CMD_VIEWFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		boolean status=false;//CMD_VIEWFILE
-		String msg="";
+		
 		try {
 			conn.WriteString( (String) param.get("TARGET_FILE") );
 			conn.MBRS_Run();
-			status = conn.ReadInt()==0 ? true:false ;
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
 			if( status ) {
 				String filename=conn.ReadString();
 				conn.ReadFile((String) param.get("TARGET_PATH")+File.separator, filename );//"BB.ZIP");
 				cmd.setResult(status, " "+conn.brexPrimary+"/"+conn.brexPort, null);  
 			}else {
-				msg=conn.ReadString(); 
+				String msg=conn.ReadString(); 
 				cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
 			}
   
@@ -124,8 +133,7 @@ public class CAgentConnector2 {
 		return cmd;
 	}
 	public BaseCommand CMD_CREATEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		boolean status=false;
-		String msg="";
+		BaseCommand resultCmd = new FileDeployCommand();
 		try {
 			conn.WriteString( (String) param.get("TARGET_FILE") );
 			conn.WriteByteFile(   (byte[])param.get("FILE_SOURCE") );
@@ -133,19 +141,35 @@ public class CAgentConnector2 {
 			conn.WriteString( (String) param.get("CHECKSUM_TYPE") );
 			conn.WriteString( ""+(long) param.get("FILE_LAST_MODIFIED") );
 			conn.WriteString( (String) param.get("FILE_PERMISSION") );
+			
+			System.out.println("TARGET_FILE : " + param.get("TARGET_FILE"));
+			if(((String) param.get("TARGET_FILE")).toString().indexOf("AdimginfoTbl.java") >-1) {
+				System.out.println("A");
+			}
 			conn.MBRS_Run();
-			status = conn.ReadInt()==0 ? true:false ;
+			
+			
+			
+			boolean status = conn.ReadInt()==0 ? true:false;
+			
 			if( status ) {
-				msg=conn.ReadString();
-				cmd.setResult(status, msg, null);  
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+								
+				if(new Boolean(result).booleanValue()) {
+					resultCmd.setResult(true, null, new Boolean(result));
+					resultCmd.setValue(ICFConstants.CMD_RESULT, result);
+				}else {
+					resultCmd.setResult(false, message, null);
+				}
 			}else {
-//				msg=conn.ReadString();
-//				cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
+				resultCmd.setResult(false, "unknown error", null);
 			}
 		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
 			e.printStackTrace();
 		}
-		return cmd;
+		return resultCmd;
 	}
 
 	public BaseCommand CMD_DOSEARCH_ONLY_FILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
@@ -156,12 +180,12 @@ public class CAgentConnector2 {
 //		inHash.put("MACHINE_TYPE", "S");
 //		
 //		String toFile = "/home/cf/temp/a001";
-//		inHash.put("TARGET_FILE", toFile); //¿ø°ÝÁö ÆÄÀÏ °æ·Î
+//		inHash.put("TARGET_FILE", toFile); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
 		boolean status=false;
 		String msg=""; 
 		try {
-//			inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real/java"); //°¡Á®¿Ã ÆÄÀÏ ¼öÁý ÃÖ»óÀ§ °æ·Î
-//			inHash.put("TARGET_REGEXP", "/compressionFilters/Compression[-*_*.*A-Za-z0-9]*.java"); //Á¤±Ô½Ä 1¹ø ¿¹½Ã - Test·Î ½ÃÀÛÇÏ´Â .htmlÆÄÀÏ
+//			inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real/java"); //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ö»ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½
+//			inHash.put("TARGET_REGEXP", "/compressionFilters/Compression[-*_*.*A-Za-z0-9]*.java"); //ï¿½ï¿½ï¿½Ô½ï¿½ 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ - Testï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½ .htmlï¿½ï¿½ï¿½ï¿½
 
 			
 			conn.WriteString( (String) param.get("TARGET_PATH") );
@@ -214,5 +238,23 @@ public class CAgentConnector2 {
 			break;
 		}
 		return resultCmd;
+	}
+
+	@Override
+	public void close(Object arg0) throws Exception {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public boolean isConnected(Object arg0) throws Exception {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Object open(HashMap arg0) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
