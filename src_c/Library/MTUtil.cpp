@@ -98,12 +98,12 @@ void printFileAttributes(const char* path) {
 #endif
 	// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
 }
-void createFile(const char* filename, const unsigned char* data, size_t length, char *msg) {
-	printf("createfile [%s]  \n",filename);
+int createFile(const char* filename, const unsigned char* data, size_t length, char *msg) {
+	printf("I will create file. [%s]  \n",filename);
 	FILE* file = fopen(filename, "wb");
 	if (file == NULL) {
 		sprintf(msg,"Failed to open file");
-		return;
+		return false;
 	}
 
 	size_t bytesWritten = fwrite(data, 1, length, file);
@@ -115,6 +115,7 @@ void createFile(const char* filename, const unsigned char* data, size_t length, 
 	}
 
 	fclose(file);
+	return true;
 }
 
 int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {

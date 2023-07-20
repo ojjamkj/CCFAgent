@@ -4,6 +4,8 @@
 #ifdef _WIN32
 #include <direct.h>
 #include <winsock2.h>
+#else
+#include <unistd.h> // For Linux/Unix
 #endif
 
 #include    <stdio.h>
@@ -38,6 +40,7 @@
 #include    <sys/time.h>
 #endif
 
+#define DIR_SEPARATOR '/'
 
 void printFileAttributes(const char* path) {
 #ifdef WIN32
@@ -98,12 +101,109 @@ void printFileAttributes(const char* path) {
 #endif
 	// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
 }
-void createFile(const char* filename, const unsigned char* data, size_t length, char *msg) {
-	printf("createfile [%s]  \n",filename);
+
+int directoryExists(const char* path) {
+    struct stat info;
+    return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+}
+
+int createSingleDirectory(const char* path) {
+#ifdef _WIN32
+    return _mkdir(path);
+#else
+    return mkdir(path, 0755); // 0755 is the octal value for read/write/execute for owner and read/execute for group and others
+#endif
+}
+
+int createDirectoriesRecursively(const char* path) {
+    // Check if the directory exists
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        if (S_ISDIR(st.st_mode)) {
+            // The directory already exists
+            return 0;
+        } else {
+            // A file with the same name exists, cannot create directory
+            return 0;
+        }
+    }
+
+    // If the path is root or empty, return
+    if (path[0] == '\0' || (path[0] == DIR_SEPARATOR && path[1] == '\0')) {
+        return 0;
+    }
+
+    // Find the last occurrence of the directory separator (DIR_SEPARATOR)
+    const char* last_sep = path;
+    for (const char* p = path; *p; p++) {
+        if (*p == DIR_SEPARATOR) {
+            last_sep = p;
+        }
+    }
+
+    // Extract the parent directory path
+    size_t parent_len = last_sep - path;
+    char* parent_path = (char*)malloc(parent_len + 1);
+    if (parent_path == NULL) {
+        return -1; // Memory allocation failure
+    }
+    strncpy(parent_path, path, parent_len);
+    parent_path[parent_len] = '\0';
+
+    // Create the parent directory recursively
+    int parent_result = createDirectoriesRecursively(parent_path);
+    free(parent_path); // Free the dynamically allocated memory
+
+    if (parent_result != 0) {
+        return parent_result; // Propagate the error up
+    }
+
+    // Create the current directory
+    return createSingleDirectory(path);
+}
+
+int createFile(char* filename, const unsigned char* data, size_t length, char *msg) {
+	// 1. create directory
+	char dir_name[300];
+
+	int start_index = 0;
+	char* last_slash = strrchr(filename, '/');
+
+	if (last_slash != NULL) {
+        size_t length = last_slash - filename + 1; // Calculate the length of the substring, including the slash
+        if (length < sizeof(dir_name)) {
+            // Copy the substring from position 0 to the last slash (including the slash)
+            memcpy(dir_name, filename, length);
+            dir_name[length] = '\0'; // Null-terminate the substring
+
+            printf("Substring from 0 to last slash: %s\n", dir_name);
+        } else {
+			sprintf(msg,"Substring buffer too small");
+            return false;
+        }
+    } else {
+    	sprintf(msg,"No slash found in the path.");
+	    return false;
+    }
+
+	printf("Directory name = %s\n", dir_name);
+
+	if (directoryExists(dir_name)) {
+		printf("Directory already exists.\n");
+	}else{
+		int mkdir_result = createDirectoriesRecursively(dir_name);
+		if (!directoryExists(dir_name)) {
+			sprintf(msg,"Error creating directory");
+			return false;
+		}
+	}
+
+	// 2. create file
+	printf("I will create file. [%s]  \n",filename);
 	FILE* file = fopen(filename, "wb");
 	if (file == NULL) {
 		sprintf(msg,"Failed to open file");
-		return;
+		return false;
 	}
 
 	size_t bytesWritten = fwrite(data, 1, length, file);
@@ -115,6 +215,7 @@ void createFile(const char* filename, const unsigned char* data, size_t length, 
 	}
 
 	fclose(file);
+	return true;
 }
 
 int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
@@ -156,10 +257,11 @@ int calculate_sha256(const char* file_path, const char* sha256sum, char* error_m
 	unsigned char digest[SHA256_DIGEST_LENGTH];
 	char sha256String[SHA256_DIGEST_LENGTH * 2 + 1];
 
+	printf("let's do checksum of %s", file_path);
 	FILE* file = fopen(file_path, "rb");
-	if (!file) {
-		strcpy(error_msg, "파일을 열 수 없습니다.");
-		return 0;
+	if (file == NULL) {
+		strcpy(error_msg, "can't open file.");
+		return false;
 	}
 	SHA256_CTX sha256Context;
 	SHA256_Init(&sha256Context);
@@ -173,11 +275,12 @@ int calculate_sha256(const char* file_path, const char* sha256sum, char* error_m
 		sprintf(&sha256String[i * 2], "%02X", (unsigned int)digest[i]);
 	}
 	fclose(file);
+	printf("file's checksum %s", sha256String);
 	if (strcmp((const char*)sha256String, sha256sum) == 0) {
 		return true;
 	}
 	else {
-		sprintf(error_msg, "체크섬 오류.");
+		sprintf(error_msg, "not matched file checksum");
 		return false;
 	}
 }
@@ -244,6 +347,28 @@ unsigned short calculate_crc32(const char* file_path, const char* crcsum, char* 
 
 }
 
+char * removeSlash(char* str) {
+	for (int i = strlen(str) - 1; i >= 0; i--)
+	{
+		if (str[i] == '\\' || str[i] == 0xcc)
+			str[i] = 0x00;
+		else if (str[i] == '/' || str[i] == 0xcc)
+			str[i] = 0x00;
+		else
+			break;
+	}
+
+	char *p = str;
+
+	while (*p) {
+		if (*p != '\\') break;
+		if (*p != '/') break;
+		p++;
+	}
+
+	if (*p == 0) strcpy(p, " ");
+	return p;
+}
 
 char * rltrim(char *str)
 {

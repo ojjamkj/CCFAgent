@@ -54,6 +54,7 @@ public class CCommandExample2 {
 // 			obj.ping(); 			// 일부처리
 			//2.CMD_CREATEFILE
 //			obj.createFile();		// 일부처리0
+			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
 //			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
@@ -61,7 +62,7 @@ public class CCommandExample2 {
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-			obj.searchOnlyFile();
+//			obj.searchOnlyFile();
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
@@ -81,7 +82,7 @@ public class CCommandExample2 {
 		inHash.put("TARGET_PORT", "34000");
 //		inHash.put("TARGET_IP", "127.0.0.1");
 //		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
+		inHash.put("CONNECT_TYPE", "B");
 		inHash.put("MACHINE_TYPE", "S");
 
 
@@ -96,12 +97,31 @@ public class CCommandExample2 {
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
 			
-			System.out.println("API-ping: resultCmd.getMessage():"+resultCmd.getMessage());
+			System.out.println("API-ping: resultCmd.getMessage():"+resultCmd.getResultData());
 //			System.out.println(resultCmd.getResultData());
 		}
 	}
-	
-	public void createFile() throws Exception
+	public void createMultiFile(File rootFile) throws Exception
+	{
+		String rootDir = "D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI";
+//		File rootFile = new File(rootDir);
+		File[] files = rootFile.listFiles();
+		
+		String targetRoot = "/home/cf/tofile";
+		
+		for(File f: files)
+		{
+			if(f.isFile()) {
+				String fromFile = f.getAbsolutePath();
+				String toFile = f.getAbsolutePath().replaceAll("\\\\", "/").replaceFirst(rootDir, "");
+				toFile = targetRoot + toFile;
+				createFile(fromFile, toFile);
+			}else {
+				createMultiFile(f);
+			}
+		}
+	}
+	public void createFile(String fromFile, String toFile) throws Exception
 	{
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
@@ -112,19 +132,19 @@ public class CCommandExample2 {
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
-		String toFile = "/home/cf/tofile/AAA.XML";
-//		String fromFile = "D:/temp/FROMFILE/AAA.xml";
-//		String toFile = "/home/cf//tofile/AAA.XML";
-		String fromFile ="D:\\temp\\tofile\\AAA.XML";
+		
+//		String fromFile = "D:/temp/sinhyup/bucasu4084.c";
+//		String toFile = "/home/cf/tofile/bucasu4084.c";
+//		String toFile = "/home/cf/tofile/AAA.XML";
+//		String fromFile ="D:\\temp\\tofile\\AAA.XML";
 		byte[] source = FileManager.viewFile(fromFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
-//		inHash.put("FILE_SOURCE", Base64.getEncoder().encodeToString(FileManager.viewFile(fromFile) )); //
 		inHash.put("FILE_SOURCE", FileManager.viewFile(fromFile) ); //
-		inHash.put("TARGET_PATH", "D:/temp"); 
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("FILE_CHECKSUM", CheckSumUtil.getCheckSum(source, "2"));
 		inHash.put("CHECKSUM_TYPE", "2"); //sha256		
 		inHash.put("FILE_LAST_MODIFIED", new File(fromFile).lastModified() );
-		inHash.put("FILE_PERMISSION", "755");
+		inHash.put("FILE_PERMISSION", "744");
 
 
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_CREATEFILE );
@@ -420,7 +440,7 @@ public class CCommandExample2 {
 	public IConnector getConnector(String machineType, String connectType){
 
 		try{
-			Class connClass = Class.forName("cmd.CAgentConnector");
+			Class connClass = Class.forName("cmd.CAgentConnector2");
 			IConnector con =  (IConnector)connClass.newInstance();
 			con.setMachineType(machineType);
 			con.setConnectType(connectType);
