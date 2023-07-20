@@ -1,0 +1,800 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+#include <sqlcpr.h>
+
+#include "MItem.h"
+#include "MRERROR.h"
+#include "MRSTRUCT.h"
+#include "MRDBAgt.h"
+#include "BRAgtDef.h"
+#include "MTSqlCod.h"
+
+//#define MAX_QUERY_SIZE 1000011
+
+#include   <sqlca.h>
+	DATABASE_LIST *pDBInfo;
+
+/*EXEC SQL INCLUDE sqlca.h;*/ 
+
+#ifndef  SQLCODE
+	#ifdef _ORACLE
+		#define	     SQLMESSAGE	((char*)sqlca.sqlerrm.sqlerrmc)
+		#define      SQLCODE    sqlca.sqlcode
+		#define      NOTFOUND   1403
+	#endif
+#endif
+ 
+
+EXEC SQL INCLUDE sqlda.h; 
+
+
+// #define  _DISP_LOG			1 
+
+int		InitBindDp( DB_AGENT *, int nVal, char *Val[], char *msg );
+int		InitSelectDp( DB_AGENT *, char *msg );
+void		getValue (SQLDA *select_dp, char *res);
+
+char	*	rltrim( char *str );
+
+int reconnectCnt=0;
+//EXEC SQL CONTEXT USE :ctxAgt;
+
+
+char* McRTrim(char *lpszSource) {
+	int i;
+	for (i = strlen(lpszSource) - 1; i > -1; i--) {
+		//if( (lpszSource[i] == ' ') || (lpszSource[i] < 0x20) )
+		if (lpszSource[i] == ' ')
+			lpszSource[i] = 0x00;
+		else
+			break;
+	}
+	return lpszSource;
+}
+char* NullCnv(char *lpszSource) {
+
+	return lpszSource;
+}
+/*
+char* NullCnv(char *lpszSource) {
+	int i,j;
+	for (i = strlen(lpszSource) - 1; i > -1; i--) {
+		if (lpszSource[i] == 'L' ||lpszSource[i] == 'l'){
+			if( i-3 > -1 ){
+				if (   (lpszSource[i-1] == 'L' ||lpszSource[i-1] == 'l' )
+				    && (lpszSource[i-2] == 'U' ||lpszSource[i-2] == 'u' )
+				    && (lpszSource[i-3] == 'N' ||lpszSource[i-3] == 'n') ){
+					lpszSource[i]=' ';
+					lpszSource[i-1]=' ';
+					lpszSource[i-2]='\'';
+					lpszSource[i-3]='\'';
+					i=i-3;
+				}
+			}
+		}
+	}
+	return lpszSource;
+}
+*/
+char *replaceAll(char *s, const char *olds, const char *news) {
+
+  char *result, *sr;
+  size_t i, count = 0;
+  size_t oldlen = strlen(olds); if (oldlen < 1) return s;
+  size_t newlen = strlen(news);
+
+
+  if (newlen != oldlen) {
+    for (i = 0; s[i] != '\0';) {
+      if (memcmp(&s[i], olds, oldlen) == 0) count++, i += oldlen;
+      else i++;
+    }
+  } else i = strlen(s);
+
+
+  result = (char *) malloc(i + 1 + count * (newlen - oldlen));
+  if (result == NULL) return NULL;
+
+
+  sr = result;
+  while (*s) {
+    if (memcmp(s, olds, oldlen) == 0) {
+      memcpy(sr, news, newlen);
+      sr += newlen;
+      s  += oldlen;
+    } else *sr++ = *s++;
+  }
+  *sr = '\0';
+
+  return result;
+}
+int  AGT_DB_Connect( void *p, void *ctx, char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	 sql_context    ctxAgt;
+
+/*
+    VARCHAR    dbuser[20];
+    VARCHAR    dbpwd[20];
+    VARCHAR    dbname[20];
+*/    
+    VARCHAR    dbuser[31];  // 2011-01-25 vapor 20 -> 200
+    VARCHAR    dbname[31];    
+    VARCHAR    dbpwd[201];
+
+EXEC SQL END DECLARE SECTION; 
+
+	struct sqlca  sqlca;
+
+   ctxAgt = ctx;
+
+	pDBInfo = (DATABASE_LIST*) p;
+
+	strcpy( (char *) dbuser.arr, pDBInfo->DBUser );
+	dbuser.len = strlen(pDBInfo->DBUser);
+	strcpy( (char *) dbpwd.arr, pDBInfo->DBPasswd );
+	dbpwd.len = strlen(pDBInfo->DBPasswd);
+	strcpy( (char *) dbname.arr, pDBInfo->DBPName );
+	dbname.len = strlen(pDBInfo->DBPName);
+
+//	EXEC SQL CONNECT :dbuser IDENTIFIED BY :dbpwd USING :dbname;
+
+   EXEC SQL CONNECT TO
+        tcp:postgresql://localhost:5432/aml60?application_name=embedded
+        USER aml60;
+        
+	if ( SQLCODE != 0  && SQLCODE !=-28002) {
+		sprintf(msg, "DB(%s) Connect error. (%d)\n", pDBInfo->DBPName, SQLCODE );
+		return -1;
+	}
+	 if( SQLCODE ==-28002 ) { //-28002 패스워드 변경주기 메시지
+		printf( "DataBase(%s) Connect Error. ORA-[%d] MSG: [%s]\n",  pDBInfo->DBPName, SQLCODE, SQLMESSAGE );
+	}
+	 printf("CONNECT TO %s(%s) : %d\n", pDBInfo->DBName, pDBInfo->DBPName , reconnectCnt++);
+
+//	EXEC SQL alter session set cursor_sharing = FORCE;
+
+	return 0;
+ 
+}
+
+ 
+
+int INITAGENT( void *p, void *pAgt, char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+////	sql_context    ctxAgt;
+EXEC SQL END DECLARE SECTION; 
+	struct sqlca sqlca;
+	DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;
+   int rc=0;
+
+   pAgtInfo->m_bConnected = 0;
+
+//   EXEC SQL ENABLE THREADS;
+
+//   EXEC SQL CONTEXT ALLOCATE :ctxAgt;
+   
+   pAgtInfo->ctx = ctxAgt;
+
+   pAgtInfo->bind_dp = sqlaldt(ctxAgt, MAX_BIND_VARS, MAX_VNAME_LEN, MAX_INAME_LEN);
+	if (pAgtInfo->bind_dp == NULL) {
+		sprintf (msg, "out of memory error.   alloc sqlda");
+		return -1;
+	}    
+	
+	pAgtInfo->select_dp = sqlaldt(ctxAgt, MAX_SEL_VARS,MAX_VNAME_LEN, MAX_INAME_LEN);
+	if (pAgtInfo->select_dp == NULL) {
+		sprintf (msg, "out of memory error.   alloc sqlda");
+		return -1;
+	} 
+
+    
+   rc = AGT_DB_Connect( p, ctxAgt, msg );
+
+   if ( rc == 0 )
+   {
+   		pAgtInfo->m_bConnected = 1;
+   		return rc;
+   }
+   else
+   {
+  		 pAgtInfo->m_bConnected = 0;
+    	return  UERR_DBCONNECT;;
+   }	
+   
+}
+
+int TERMAGENT( void *pAgt, char *msg, char *dummy1 )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+////	sql_context    ctxAgt;
+EXEC SQL END DECLARE SECTION; 
+	struct sqlca sqlca;
+	DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;
+
+   ctxAgt = pAgtInfo->ctx;
+
+//   EXEC SQL COMMIT WORK RELEASE;
+
+   if ( pAgtInfo->bind_dp ) {
+   	sqlclut(ctxAgt, (SQLDA*) pAgtInfo->bind_dp);
+   	pAgtInfo->bind_dp = 0;
+   }
+   
+   if ( pAgtInfo->select_dp ) {
+   	sqlclut(ctxAgt, (SQLDA*) pAgtInfo->select_dp);
+   	pAgtInfo->select_dp = 0;
+   }
+
+   return 0;
+}
+
+
+int	EXECSQLCUROPEN( void *p, void *pAgt, char *stmt, int nVal, char *Val[], char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+////	sql_context    ctxAgt;
+	VARCHAR			statement[20001]; //MItem.h 20000 MAX_QUERY_SIZE
+EXEC SQL END DECLARE SECTION; 
+	 struct sqlca sqlca;
+	 SQLDA  *bind_dp;	
+	 int query_size=0;
+	 
+	 DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;	 
+	 ctxAgt = pAgtInfo->ctx;
+		 
+#ifdef _DISP_LOG    
+//	printf("\n%s\n\n", stmt );
+#endif
+	    
+	    pAgtInfo->m_fetch_total = 0;
+	    pAgtInfo->m_fetch_rows = 0;
+	    pAgtInfo->m_idx = 0;
+		/*
+	    if ( pAgtInfo->m_bConnected == 0 ) {
+			if ( AGT_DB_Connect(  p, ctxAgt, msg ) != 0 ) 
+			{
+				pAgtInfo->m_bConnected = 0;
+	         	return UERR_DBCONNECT;
+			}
+			pAgtInfo->m_bConnected = 1;
+		}*/
+		McRTrim(stmt);
+
+		NullCnv(stmt);
+
+		query_size=strlen(stmt);
+		
+		if( query_size >MAX_QUERY_SIZE){
+			stmt[MAX_QUERY_SIZE -1]=0;
+			strcpy ((char*)statement.arr, stmt );
+			statement.len = strlen(stmt);
+		}else{
+			strcpy ((char*)statement.arr, stmt );
+			statement.len = strlen(stmt);
+		}
+
+	    EXEC SQL PREPARE S FROM :statement;
+//	    if ( SQLCODE == -28 || SQLCODE==-1012 ||SQLCODE <= -12500 || SQLCODE==-3135 || SQLCODE==-3114 || SQLCODE ==-3113 ||SQLCODE ==-1092 ) {
+
+	    if ( SQLCODE == -28 || SQLCODE==-1012 ||SQLCODE <= -12500 || SQLCODE==-3135 || SQLCODE==-3114 || SQLCODE ==-3113 ||SQLCODE ==-1092 ||SQLCODE ==-2396 ||SQLCODE ==-2391) {
+			if(SQLCODE ==-1012 ||SQLCODE ==-2396 ||SQLCODE ==-2391 ){
+
+			    SQLCODE=0;
+				int ac =TERMAGENT( pAgtInfo, msg, msg);
+				ac =INITAGENT( p, pAgtInfo, msg );
+				ctxAgt = pAgtInfo->ctx; //없으면 오류 발생. -1012
+
+				if( ac !=0 ){
+		  			if ( AGT_DB_Connect( p, ctxAgt, msg ) != 0 ) {
+	         			pAgtInfo->m_bConnected = 0;
+	         			return UERR_DBCONNECT;
+	      			}
+				}
+			}else{ 
+		  		if ( AGT_DB_Connect( p, ctxAgt, msg ) != 0 ) {
+	         		pAgtInfo->m_bConnected = 0;
+	         		return UERR_DBCONNECT;
+	      		}
+			}
+	      	//pAgtInfo->m_bConnected = 1;
+	      	EXEC SQL PREPARE S FROM :statement;
+	    }
+     
+	
+	    if ( SQLCODE != 0 ) {
+	       sprintf( msg, "SQL Prepare Error. (%d) %s", SQLCODE, SQLMESSAGE );
+	
+	       return SQLCODE;
+	   }
+	    EXEC SQL DECLARE CSR CURSOR FOR S;   
+	    
+	    if ( nVal > 0 ) {   /*  Describe Bind Variables.  */
+	       if ( InitBindDp( pAgtInfo, nVal, Val, msg ) != 0 ) return -1;
+	       bind_dp = (SQLDA*) pAgtInfo->bind_dp;
+	       
+	       EXEC SQL OPEN CSR USING DESCRIPTOR bind_dp;
+	    } else {
+	       EXEC SQL OPEN CSR;
+	    }
+	
+	    if ( SQLCODE != 0 ) {
+	       sprintf( msg, "Cursor open error(%d)  %s.", SQLCODE, SQLMESSAGE );      
+	       return SQLCODE;
+	    }  
+	
+	    if ( InitSelectDp( pAgtInfo, msg ) != 0 ) return -1;     
+	        	 	 
+	    return 0;
+    
+}
+
+
+int EXECSQLFETCH( void *pAgt, char *res, char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	sql_context    ctxAgt;
+	int				array_size;
+EXEC SQL END DECLARE SECTION; 
+
+	struct sqlca sqlca;
+	DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;
+	SQLDA		*sdp = (SQLDA*) pAgtInfo->select_dp;
+	int		 idx = pAgtInfo->m_idx;
+   short    *iptr;
+   char     *cptr;
+   int		 sz;
+   char		 strVal[20000];//MAX_QUERY_SIZE
+   char		*p = res;
+   
+#ifdef _DISP_LOG     
+ //printf("Idx = %d\n", idx );
+#endif
+
+	if ( idx == 0 ) {
+		ctxAgt = pAgtInfo->ctx;
+		array_size = MAX_FETCH_ROWS;
+
+//      EXEC SQL FOR :array_size FETCH CSR USING DESCRIPTOR sdp;
+      
+		if ( SQLCODE != 0 && SQLCODE != NOTFOUND ) {
+			sprintf( msg, "SQL Cursor Fetch Error.  %d",	SQLCODE );
+			return UERR_DBERROR;
+		}
+
+		pAgtInfo->m_fetch_rows = sqlca.sqlerrd[2] - pAgtInfo->m_fetch_total;
+		pAgtInfo->m_fetch_total = sqlca.sqlerrd[2];
+
+#ifdef _DISP_LOG 
+//printf("   fetch rows = %d\n\n", pAgtInfo->m_fetch_rows );
+#endif
+
+		if ( pAgtInfo->m_fetch_rows <= 0 ) return 1;
+	}
+
+	if ( idx == pAgtInfo->m_fetch_rows ) return 1;
+	
+	
+   for (int i=0; i<sdp->F; i++)
+   {
+      sz = (int)sdp->L[i];
+
+		iptr = sdp->I[i] + idx;
+		cptr = sdp->V[i] + idx * sz;
+
+   	if ( i > 0 ) {
+   		strcpy( p,"|^" );
+   		p += 2;
+   	}
+   			
+      if (*iptr < 0) {
+          strVal[0] = 0;
+      } else {
+//printf("    sz[%d][%s]\n", sz, cptr );      
+          sprintf(strVal, "%-*.*s",  sz, sz, cptr );
+          strcpy( p, rltrim(strVal) );
+          p += strlen( p );
+      }		
+   }
+
+	*p = 0;
+	
+	if ( ++idx == MAX_FETCH_ROWS ) idx = 0;
+
+	pAgtInfo->m_idx = idx;
+
+   return 0;
+}
+ 
+
+int EXECSQLCURCLOSE( void *pAgt, char *dummy1, char *dummy2 )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	sql_context    ctxAgt;
+EXEC SQL END DECLARE SECTION; 
+
+	struct sqlca sqlca;
+	DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;
+
+	ctxAgt = pAgtInfo->ctx;
+
+	SQLDA *sdp = (SQLDA*) pAgtInfo->select_dp;
+	
+	for (int i=0; i<sdp->F; i++)
+	{
+        free (sdp->V[i]);
+		free (sdp->I[i]);
+	}
+ /*
+	for (int i=0; i<bind_dp->F; i++)
+	{
+        if( bind_dp->V[i]!=NULL)free (bind_dp->V[i]);
+		free (bind_dp->I[i]);
+	}*/
+ 
+	EXEC SQL CLOSE CSR;
+
+	return 0;
+}
+
+
+int EXECSQLCUD( void *p, void *pAgt, char *stmt, int nVal, char *Val[], char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	sql_context    ctxAgt;
+	VARCHAR			statement[20001]; //MItem.h 20000 MAX_QUERY_SIZE
+	
+EXEC SQL END DECLARE SECTION; 
+
+	struct sqlca sqlca;
+	DB_AGENT	*pAgtInfo = (DB_AGENT*) pAgt;
+	SQLDA  *bind_dp;
+	int     rc;
+	int 	query_size;	 
+#ifdef _DEBUG
+	printf ( "ExecSqlCUD(%s) => %s\n", pDBInfo->DBPName, stmt );
+#endif
+
+
+   ctxAgt = pAgtInfo->ctx;
+
+	if ( ! pAgtInfo->m_bConnected ) {
+		if ( AGT_DB_Connect( p, ctxAgt, msg ) != 0 )
+		{
+			pAgtInfo->m_bConnected = 0;
+			return UERR_DBCONNECT;
+		}
+		
+		pAgtInfo->m_bConnected = 1;
+	}
+
+		McRTrim(stmt);
+		query_size=strlen(stmt);
+		if( query_size >MAX_QUERY_SIZE){
+			stmt[MAX_QUERY_SIZE -1]=0;
+			strcpy ((char*)statement.arr, stmt );
+			statement.len = strlen(stmt);
+		}else{
+			strcpy ((char*)statement.arr, stmt );
+			statement.len = strlen(stmt);
+		}	
+
+   EXEC SQL PREPARE S FROM :statement;
+	if ( SQLCODE != 0 ) {
+//   	if ( SQLCODE == -28 || SQLCODE==-1012 ||SQLCODE <= -12500 || SQLCODE==-3135 || SQLCODE==-3114 || SQLCODE ==-3113 ||SQLCODE ==-1092  ) {
+   	if ( SQLCODE == -28 || SQLCODE==-1012 ||SQLCODE <= -12500 || SQLCODE==-3135 || SQLCODE==-3114 || SQLCODE ==-3113 ||SQLCODE ==-1092  ||SQLCODE ==-2396 ||SQLCODE ==-2391) {
+      	if ( AGT_DB_Connect( p, ctxAgt, msg ) != 0 ) {
+         	pAgtInfo->m_bConnected = 0;
+         	return UERR_DBCONNECT;
+      	}
+      	pAgtInfo->m_bConnected = 1;
+      	EXEC SQL PREPARE S FROM :statement;
+      
+      }
+	}
+      
+   if ( SQLCODE != 0 ) {
+       sprintf( msg, "SQL Prepare Error. (%d) %s", SQLCODE, SQLMESSAGE );
+
+       return SQLCODE;
+   }
+
+
+	if ( nVal > 0 ) {   /*  Describe Bind Variables.  */
+		if ( InitBindDp( pAgtInfo, nVal, Val, msg ) != 0 ) return -1;
+       
+		bind_dp = (SQLDA*) pAgtInfo->bind_dp;
+       
+		EXEC SQL EXECUTE S USING DESCRIPTOR bind_dp;
+             
+	} else {
+		EXEC SQL EXECUTE S;
+	}
+	
+	rc = SQLCODE;
+
+	if ( SQLCODE == 0 )
+	    EXEC SQL COMMIT;
+	else
+	    EXEC SQL ROLLBACK;
+	    
+	    	
+	if ( rc != 0 ) {
+	   sprintf( msg, "SQL Error. (RC=%d) SQLCODE ORA[%d]", rc ,SQLCODE);
+	}
+	return rc;
+}
+
+
+int  InitBindDp( DB_AGENT *pAgtInfo, int nVal, char *Val[], char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	sql_context    ctxAgt;
+EXEC SQL END DECLARE SECTION; 
+
+	 struct sqlca sqlca;
+	 SQLDA  *bind_dp = (SQLDA*) pAgtInfo->bind_dp;
+   char *token;
+   char *tempData;
+   char  descData[200];
+	 ctxAgt = pAgtInfo->ctx;
+
+    bind_dp->N = nVal; 
+        
+//    EXEC SQL DESCRIBE BIND VARIABLES FOR S INTO bind_dp;
+    
+    if (bind_dp->F < 0)
+    {
+       sprintf( msg, "Too many bind variables for descriptor.");
+       return -1;
+    }
+  
+        
+    bind_dp->N = bind_dp->F;
+/* ARRAY 아닐경우 되는 경우.	 
+#ifdef _DISP_LOG 
+//    printf( "bind variables (%d).\n", bind_dp->F);        
+#endif    
+    for (int i=0; i<bind_dp->F; i++)
+    {
+#ifdef _DISP_LOG     
+//       printf( "   %d : C[%d]   S[%s]\n", i, (int)bind_dp->C[i], bind_dp->S[i] );
+#endif
+
+       bind_dp->I[i] = 0;
+       bind_dp->T[i] = 1;    //  CHAR : 1    NUM : 2   LONG : 8   ...
+       
+       bind_dp->L[i] = strlen(Val[i]);
+       bind_dp->V[i] = Val[i];
+		}
+*/		
+#ifdef _DISP_LOG 
+//    printf( "bind variables2 (%d).\n", bind_dp->F);        
+#endif    
+    for (int i=0; i<bind_dp->F; i++)
+    {
+#ifdef _DISP_LOG     
+//       printf( "   %d : C[%d]   S[%s]\n", i, (int)bind_dp->C[i], bind_dp->S[i] );
+#endif
+
+       bind_dp->I[i] = 0;
+       bind_dp->T[i] = 1;    //  CHAR : 1    NUM : 2   LONG : 8   ...
+       bind_dp->L[i] = strlen(Val[i]);
+       bind_dp->V[i] = Val[i];
+/*
+       if( strlen(Val[i]) > 0 ){
+				 	tempData=(char*)malloc( strlen(Val[i])+1 );
+				 	strcpy(tempData,Val[i]);
+				 	token=strtok(tempData,",");
+				 	sprintf(descData,"%s",token);
+			   	if(tempData!=NULL)free(tempData);
+       		bind_dp->L[i] = strlen(descData);
+       		bind_dp->V[i]=  (char*) realloc(bind_dp->V[i],(bind_dp->L[i]+1));
+       		printf("MROraAgt [%s][%d]\n",descData, strlen(descData));
+       		strncpy(bind_dp->V[i],descData,strlen(descData));
+       		
+       }else{
+		bind_dp->L[i] = strlen(Val[i]);
+       		bind_dp->V[i] = Val[i];
+       }*/
+    }
+    
+#ifdef _DISP_LOG 
+//	 printf("\n" );
+#endif
+
+
+	 if ( bind_dp->F != nVal )
+	 {
+       sprintf( msg, "bind variables unmatch.");
+       return -1;
+    }
+        
+    return 0;
+}
+
+
+int InitSelectDp( DB_AGENT *pAgtInfo, char *msg )
+{
+EXEC SQL BEGIN DECLARE SECTION;
+//	sql_context    ctxAgt;
+EXEC SQL END DECLARE SECTION; 
+
+	 struct sqlca sqlca;
+	 int	precision, scale;
+	 int	null_ok;
+	 
+	 SQLDA  *select_dp = (SQLDA*) pAgtInfo->select_dp;
+
+	 ctxAgt = pAgtInfo->ctx;
+
+    select_dp->N = MAX_SEL_VARS; 
+//    EXEC SQL DESCRIBE SELECT LIST FOR S INTO select_dp;
+    
+    if (select_dp->F < 0)
+    {
+       sprintf (msg, "Too many select list variables for descriptor: %d",
+         -(select_dp->F));
+       return -1;
+    }
+    
+    select_dp->N = select_dp->F;
+ /*4.0 20181224수정 ad2001 (원래 없음 .. 추가하였으나 문제발생하여 제거(2019-01-01)
+    for(int i=0; i < MAX_SEL_VARS; i++){
+            if( select_dp->I[i]!=NULL){
+                    free(select_dp->I[i]);
+                    select_dp->I[i]=(short*) malloc(sizeof(short));
+            }
+            if( select_dp->V[i]!=NULL){
+                   free(select_dp->V[i]);
+                   select_dp->V[i]=(char *) malloc(1);
+            }
+     }
+    */
+#ifdef _DISP_LOG         
+//    printf( "select variables.\n");
+#endif  
+    
+    for ( int i=0; i<select_dp->F; i++)
+    {
+        sqlnult(ctxAgt, (unsigned short*) &(select_dp->T[i]), (unsigned short*) &(select_dp->T[i]), &null_ok);
+
+#ifdef _DISP_LOG 
+//	 printf("   Type(%d) %d  %d\n", i, (short) select_dp->T[i], select_dp->L[i] );
+#endif
+        
+        switch ( select_dp->T[i] )
+        {
+            case 1 :  /* CHAR 데이타 타입 : 변경 필요없음. */
+            break;
+            
+            case 2 : /* NUMBER 데이타 타입 : "sqlprc"를 이용 precision과 scale을 setting */
+               sqlprct( ctxAgt, (unsigned int*) &(select_dp->L[i]), &precision, &scale);
+
+#ifdef _DISP_LOG                
+//printf("      precision = %d   scale = %d\n", precision, scale );
+#endif
+               if (precision == 0) precision = 40;   /* Table컬럼 단독이 아닐때 =>  NUMBER의 최대 크기 */
+
+               select_dp->L[i] = 40;
+//               select_dp->L[i] = precision + 2;
+//               if (scale < 0) select_dp->L[i] += -scale;
+               
+            break;
+            
+            case 8 :  /* LONG 데이타 타입 */
+               select_dp->L[i] = 240;
+            break;
+
+            case 11 : /* ROWID datatype */
+               select_dp->L[i] = 18;
+            break;
+                        
+            case 12 :/* DATE 데이타 타입 */
+               select_dp->L[i] = 9;
+            break;
+            
+            case 23 :/* RAW 데이타 타입 */
+            break;
+            
+            case 24 :  /* LONG RAW 데이타 타입 */
+               select_dp->L[i] = 240;
+            break;
+        }
+        
+        /* select-list  item에 space 할당 */
+		
+		/*산업은행에서 Query 문장에 LTRIM(....) 긴 문장 존재시 32767 로 길이가 설정되면서 메모리 오류 발생. 하여 룰에서는 1000까지만 반환되게 변경함.2018.10.11*/
+		if( select_dp->L[i]>QUERY_COL_RESULT_SIZE){
+			select_dp->L[i]=QUERY_COL_RESULT_SIZE;
+		} 
+
+//        select_dp->V[i] = (char *)calloc(MAX_FETCH_ROWS, select_dp->L[i]+1);
+
+        if ((select_dp->V[i] = (char *)calloc(MAX_FETCH_ROWS, select_dp->L[i]+1)) == NULL)
+        {
+           sprintf( msg, "** error in calloc() for select-list");
+           return -1;
+        }     
+        
+        /*indicator변수를 위한 space 할당 */
+        
+        if ((select_dp->I[i] = (short *)calloc(MAX_FETCH_ROWS,sizeof(short))) == NULL)
+        {
+           sprintf( msg, "** error in calloc() for indicator variables");
+           return -1;
+        }
+
+               
+        /* LONG RAW를 제외하고 모든 데이타 타입이 character로 coerce */            
+        if (select_dp->T[i] != 24) select_dp->T[i] = 1;
+    
+    }
+
+#ifdef _DISP_LOG 
+//	 printf("\n" );
+#endif
+
+    return 0;	 
+}
+
+	     
+char * rltrim( char *str )
+{
+    for( int i = strlen(str) - 1; i >= 0; i-- )
+    {
+        if ( str[i] == ' ' || str[i] == 0xcc)
+            str[i] = 0x00;
+        else
+            break;
+    }
+    
+    char *p = str;
+
+	 while ( *p ) {
+	     if ( *p != ' ' ) break;
+	     p++;
+	 }
+	 
+	 if ( *p == 0 ) strcpy( p, " " );
+    return p;    
+}
+
+
+/*
+#include    <time.h>
+
+#if defined(_OS390)
+	#include	<sys/time.h>
+#endif
+#if defined(WIN32)
+	#include	<sys/timeb.h>
+#endif
+
+double   getMiliSecond()
+{
+	double   usec;
+
+#ifdef WIN32
+   	struct _timeb timebuffer;
+	_ftime( &timebuffer );
+
+	usec = timebuffer.time * 1000.0 + timebuffer.millitm;
+
+#else
+	struct timeval stamp1; 
+
+	gettimeofday(&stamp1, NULL) ;
+
+	usec = stamp1.tv_sec * 1000 + stamp1.tv_usec / 1000;
+
+#endif
+ 
+	return usec;
+}
+*/
+ 
