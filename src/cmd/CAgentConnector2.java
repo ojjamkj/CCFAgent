@@ -1,6 +1,7 @@
 package cmd;
 
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 
 //import org.json.simple.JSONObject;
@@ -11,6 +12,8 @@ import com.gtone.cf.rt.connect.impl.AbstractConnector;
 import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.ICFConstants;
+
+import net.sf.json.JSONObject;
 
  
  
@@ -64,6 +67,8 @@ import com.gtone.cf.util.ICFConstants;
 	public final static String CMD_TYPE_COMMAND = "EXECUTE";
  */
 public class CAgentConnector2 extends AbstractConnector {
+	SimpleDateFormat sdf = new SimpleDateFormat(ICFConstants.DATE_PATTERN);
+	
 	public BaseCommand CMD_AGENT_PING(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 		boolean status=false;
 		BaseCommand resultCmd = new FileDeployCommand();
@@ -90,47 +95,91 @@ public class CAgentConnector2 extends AbstractConnector {
 	} 
 	
 	public BaseCommand CMD_VIEWFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		
+		BaseCommand resultCmd = new FileDeployCommand();
+		try {
+			conn.WriteString( (String) param.get("TARGET_FILE") );
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
+					FileModel file = new FileModel();
+					String jsonstring = conn.ReadString();
+					if(jsonstring== null || "".equals(jsonstring)) {
+						throw new Exception("received file info is null");
+					}
+					JSONObject fileObj = JSONObject.fromObject(jsonstring);
+					
+					if(fileObj.containsKey("filename")) file.setFilename(fileObj.getString("filename"));
+					if(fileObj.containsKey("is_dir")) {
+						file.setIsDirectory(fileObj.getInt("is_dir")==1? true: false);
+						if(file.isDirectory()) {
+							file.setType( "DIR" );
+						}else {
+							file.setType( "File" );
+						}
+					}
+					if(fileObj.containsKey("modify_time")) file.setLastModifiedDate(sdf.format(new java.util.Date(fileObj.getLong("modify_time")*1000)));
+					if(fileObj.containsKey("path")) {
+						String filePath = fileObj.getString("path"); 
+						file.setPath(filePath);					
+						file.setRootPath(remoteTargetRootPath);
+						file.setRelPath(filePath.replaceFirst(remoteTargetRootPath, "")); // root부터 상태 경로
+					}
+					 
+					if(fileObj.containsKey("read")) file.setCanRead(fileObj.getInt("read")==1? true: false);
+					if(fileObj.containsKey("write")) file.setCanWrite(fileObj.getInt("write")==1? true: false);
+					if(fileObj.containsKey("size")) {
+						file.setLength(fileObj.getLong("size"));
+						file.setSize( getFileSize(fileObj.getLong("size")) );
+					}
+					if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
+//					file.setFileSource(conn.ReadFileByte());
+					
+					resultCmd.setResult(true, null, file);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, file);
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+
+	public BaseCommand CMD_DELTEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+		BaseCommand resultCmd = new FileDeployCommand();
 		try {
 			conn.WriteString( (String) param.get("TARGET_FILE") );
 			conn.MBRS_Run();
 			boolean status = conn.ReadInt()==0 ? true:false ;
-			
 			if( status ) {
-				String filename=conn.ReadString();
-				conn.ReadFile((String) param.get("TARGET_PATH")+File.separator, filename );//"BB.ZIP");
-				cmd.setResult(status, " "+conn.brexPrimary+"/"+conn.brexPort, null);  
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					resultCmd.setResult(true, null, new Boolean(result));
+					resultCmd.setValue(ICFConstants.CMD_RESULT, result);
+				}else {
+					resultCmd.setResult(false, message, null);
+				}
 			}else {
-				String msg=conn.ReadString(); 
-				cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
+				resultCmd.setResult(false, "unknown error", null);
 			}
   
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return cmd;
-	}
-
-	public BaseCommand CMD_DELTEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		boolean status=false;//CMD_VIEWFILE
-		String msg="";
-		try {
-			conn.WriteString( (String) param.get("TARGET_FILE") );
-			conn.MBRS_Run();
-			status = conn.ReadInt()==0 ? true:false ;
-			if( status ) {
-				String filename=conn.ReadString();
-				conn.ReadFile((String) param.get("TARGET_PATH")+File.separator, filename );//"BB.ZIP");
-				cmd.setResult(status, " "+conn.brexPrimary+"/"+conn.brexPort, null);  
-			}else {
-				msg=conn.ReadString(); 
-				cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
-			}
-  
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return cmd;
+		return resultCmd;
 	}
 	public BaseCommand CMD_CREATEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 		BaseCommand resultCmd = new FileDeployCommand();
@@ -142,13 +191,7 @@ public class CAgentConnector2 extends AbstractConnector {
 			conn.WriteString( ""+(long) param.get("FILE_LAST_MODIFIED") );
 			conn.WriteString( (String) param.get("FILE_PERMISSION") );
 			
-			System.out.println("TARGET_FILE : " + param.get("TARGET_FILE"));
-			if(((String) param.get("TARGET_FILE")).toString().indexOf("AdimginfoTbl.java") >-1) {
-				System.out.println("A");
-			}
 			conn.MBRS_Run();
-			
-			
 			
 			boolean status = conn.ReadInt()==0 ? true:false;
 			
@@ -256,5 +299,19 @@ public class CAgentConnector2 extends AbstractConnector {
 	public Object open(HashMap arg0) throws Exception {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	protected String getFileSize(long size) throws Exception {
+		try{			
+			if(size == 0)
+				return ICFConstants.BLANK;
+
+			if (size > 1024)
+				return (size/1024) + " KB";
+			else
+				return size + " B";
+		}catch(Exception e){
+			throw e;
+		}
 	}
 }
