@@ -42,12 +42,24 @@
 
 #define DIR_SEPARATOR '/'
 
-void printFileAttributes(const char* path) {
-#ifdef WIN32
+const char* getFileNameFromPath(const char* path) {
+    const char* last_sep = strrchr(path, '/');
+#ifdef _WIN32
+    const char* last_sep_windows = strrchr(path, '\\');
+    if (last_sep_windows > last_sep) {
+        last_sep = last_sep_windows;
+    }
+#endif
+
+    return last_sep ? last_sep + 1 : path;
+}
+
+int printFileAttributes(const char* path, char* msg, size_t msg_size) {
+/*#ifdef WIN32 (윈도우 필요 없음
 	struct _stat fileInfo;
 	if (_stat(path, &fileInfo) != 0) {
 		printf("Failed to get file attributes\n");
-		return;
+		return false;
 	}
 
 	if (fileInfo.st_mode & _S_IFDIR) {
@@ -74,31 +86,54 @@ void printFileAttributes(const char* path) {
 		}
 		// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
 }
-#else
+#else*/
 	struct stat fileInfo;
+	int read=0;
+	int write=0;
+	int execute=0;
+	int dir=0;
+
 	if (stat(path, &fileInfo) != 0) {
-		printf("Failed to get file attributes\n");
-		return;
+		snprintf(msg, msg_size, "Failed to get file attributes");
+		return false;
 	}
 
 	if (S_ISDIR(fileInfo.st_mode)) {
-		printf("Type: Directory\n");
-	}
-	else { 
-		printf("Type: File\n");
+		dir = 1;
 	}
 
-	printf("Attributes:\n");
-	if (fileInfo.st_mode & S_IRUSR) {
-		printf("- Owner Read\n");
+    read = fileInfo.st_mode & S_IRUSR ? 1 : 0;
+    write = fileInfo.st_mode & S_IWUSR ? 1 : 0;
+    execute = fileInfo.st_mode & S_IXUSR ? 1 : 0;
+
+	const char* filename = getFileNameFromPath(path);
+	printf("fileName:  %s\n", filename );
+	printf("path:  %s\n", path );
+	printf("size:  %lld\n", (long long)fileInfo.st_size );
+	printf("isDir:  %i\n", dir );
+	printf("modify_time:  %ld\n", (long)fileInfo.st_mtime);
+	printf("read:  %i\n", read );
+	printf("write:  %i\n", write );
+	printf("execute:  %i\n", execute );
+	printf("before msg:  %s\n", msg );
+
+	int result = snprintf(msg, msg_size,
+	                          "{\"filename\":\"%s\",\"path\":\"%s\",\"size\":%lld,\"is_dir\":%i,\"modify_time\":%ld,\"read\":%i,\"write\":%i,\"execute\":%i}",
+	                          filename, path, (long long)fileInfo.st_size, dir, (long)fileInfo.st_mtime, read, write, execute);
+
+	if (result >= (int)msg_size) {
+	    snprintf(msg, msg_size, "JSON string too large for buffer");
+	    return false;
 	}
-	if (fileInfo.st_mode & S_IWUSR) {
-		printf("- Owner Write\n");
-	}
-	if (fileInfo.st_mode & S_IXUSR) {
-		printf("- Owner Execute\n");
-	}
-#endif
+
+	printf("after msg:  %s\n", msg );
+
+//#endif
+
+
+
+
+	return true;
 	// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
 }
 

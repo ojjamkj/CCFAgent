@@ -54,9 +54,9 @@ public class CCommandExample2 {
 // 			obj.ping(); 			// 일부처리
 			//2.CMD_CREATEFILE
 //			obj.createFile();		// 일부처리0
-			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
+//			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-//			obj.viewFile(); 		// 일부처리
+			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
 //			obj.build();
 			//5.CMD_DELETEFILE
@@ -172,10 +172,10 @@ public class CCommandExample2 {
 		inHash.put("MACHINE_TYPE", "S");
 		
 //		String toFile = "/home/cf/Dev/Src/Admin/BREXDiag.cpp";
-		String toFile = "/home/cf/Dev//Bin/LINUX/cfagent";
+		String toFile = "/home/cf/Dev/Bin/LINUX/cfagent";
 //		byte[] source = FileManager.viewFile(toFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
-		inHash.put("TARGET_PATH", "D:/temp"); 
+		inHash.put("TARGET_PATH", "/home/cf/Dev/Bin/LINUX"); 
 		
  
 
