@@ -157,25 +157,29 @@ public class CAgentConnector2 extends AbstractConnector {
 	}
 
 	public BaseCommand CMD_DELTEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		boolean status=false;//CMD_VIEWFILE
-		String msg="";
+		BaseCommand resultCmd = new FileDeployCommand();
 		try {
 			conn.WriteString( (String) param.get("TARGET_FILE") );
 			conn.MBRS_Run();
-			status = conn.ReadInt()==0 ? true:false ;
+			boolean status = conn.ReadInt()==0 ? true:false ;
 			if( status ) {
-				String filename=conn.ReadString();
-				conn.ReadFile((String) param.get("TARGET_PATH")+File.separator, filename );//"BB.ZIP");
-				cmd.setResult(status, " "+conn.brexPrimary+"/"+conn.brexPort, null);  
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					resultCmd.setResult(true, null, new Boolean(result));
+					resultCmd.setValue(ICFConstants.CMD_RESULT, result);
+				}else {
+					resultCmd.setResult(false, message, null);
+				}
 			}else {
-				msg=conn.ReadString(); 
-				cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);  
+				resultCmd.setResult(false, "unknown error", null);
 			}
   
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return cmd;
+		return resultCmd;
 	}
 	public BaseCommand CMD_CREATEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 		BaseCommand resultCmd = new FileDeployCommand();

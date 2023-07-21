@@ -162,6 +162,7 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 	m_ObjBuffer = m_ObjBuffer2;
 	char path[1000];
 	char temp[10000];
+	char fileModel[1000];
 	unsigned char *fileData;
 	long fileLength = 0;
 	char filePath[1000];
@@ -179,11 +180,16 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 	if (stat(filePath, &fileinfo) != 0) {
 		m_ObjBuffer->Clear1();
 		m_ObjBuffer->WriteLong((long)0);
-		m_ObjBuffer->WriteLong((long)-1);
-		m_ObjBuffer->WriteString("파일을 열 수 없습니다(size).");
+		m_ObjBuffer->WriteLong((long)0);
+
+		// final result
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString("파일을 열 수 없습니다(size)."); //message
+		printf("(end)[%s]\n", "파일을 열 수 없습니다(size).");
+
 		return;
 	}
-#ifdef WIN32
+/*#ifdef WIN32
 	 
 	printf("[입력한 경로]=%s\n", filePath);
 	ptr = strrchr(filePath, '/');     //문자열(path)의 뒤에서부터 '\'의 위치를 검색하여 반환
@@ -194,30 +200,47 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 		strcpy(fileName, ptr + 1);
 
 	printf("\n[실행결과]=%s\n", fileName);
-#else
+#else*/
 	fileName2 = basename(filePath);
 	sprintf(fileName,"%s",fileName2);
-#endif
+//#endif
 
 	FILE* file = fopen(filePath, "rb");
 	if (file == NULL) {
-		perror("Failed to open file");
 		m_ObjBuffer->Clear1();
 		m_ObjBuffer->WriteLong((long)0);
-		m_ObjBuffer->WriteLong((long)-1);
-		m_ObjBuffer->WriteString("Failed to open file.");
+		m_ObjBuffer->WriteLong((long)0);
+
+		// final result
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString("Failed to open file."); //message
+		printf("(end)[%s]\n", "Failed to open file.");
+
 		return;
 	}
+
+	// 2. write file
+	int result = printFileAttributes(filePath, fileModel, sizeof(fileModel));
+	if(!result)
+	{
+		m_ObjBuffer->Clear1();
+		m_ObjBuffer->WriteLong((long)0);
+		m_ObjBuffer->WriteLong((long)0);
+
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString(fileModel); //error message
+		return;
+	}
+	// 1.send file information
 	m_ObjBuffer->Clear1();
 	m_ObjBuffer->WriteLong((long)0);
 	m_ObjBuffer->WriteLong((long)0);
-	m_ObjBuffer->WriteString(fileName);
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(""); //message
 
-	printFileAttributes(filePath);
+	m_ObjBuffer->WriteString(fileModel);
 
-	m_ObjBuffer->WriteLong( fileinfo.st_size);
-	printf("fileinfo.st_size =[%d] ", fileinfo.st_size);
-
+	// 2. write file
 	long outLeng = m_ObjBuffer->getLength();
 	m_ObjBuffer->setMaxLength(outLeng + fileinfo.st_size);
 	printf("tot fileinfo.st_size =[%d] \n",outLeng+ fileinfo.st_size);
@@ -412,19 +435,25 @@ void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	m_ObjBuffer->ReadString(temp);// MACHINE_TYPE
 
 	int status = remove(filePath);
-	printf(" status [%d]\n", status);
+	printf("remove file status [%d]\n", status);
 	if (status == 0) {
 		m_ObjBuffer->Clear1();
 		m_ObjBuffer->WriteLong((long)0);
 		m_ObjBuffer->WriteLong((long)0);
 
+		m_ObjBuffer->WriteString("true"); //result
+		m_ObjBuffer->WriteString(""); //message
+
 	}
 	else {
 		m_ObjBuffer->Clear1();
 		m_ObjBuffer->WriteLong((long)0);
-		m_ObjBuffer->WriteLong((long)status);
+		m_ObjBuffer->WriteLong((long)0);
 		sprintf(temp, "return code %d ", status);
-		m_ObjBuffer->WriteString(temp);
+
+		// final result
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString(temp); //message
 	}
 }
 void CFAPI::API03_PING(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
