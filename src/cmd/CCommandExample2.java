@@ -79,7 +79,7 @@ public class CCommandExample2 {
 	{
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "35400");
 //		inHash.put("TARGET_IP", "127.0.0.1");
 //		inHash.put("TARGET_PORT", "30502");
 		inHash.put("CONNECT_TYPE", "B");
@@ -126,7 +126,7 @@ public class CCommandExample2 {
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
 //		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "35400");
 //		inHash.put("TARGET_IP", "127.0.0.1");
 //		inHash.put("TARGET_PORT", "30502");
 		inHash.put("CONNECT_TYPE", "A");
@@ -167,7 +167,7 @@ public class CCommandExample2 {
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
 //		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "35400");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
@@ -189,9 +189,9 @@ public class CCommandExample2 {
 		if( !resultCmd.isSuccess() )
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
-//			FileModel fileModel = (FileModel)resultCmd.getResultData();
-//			System.out.println(resultCmd.getResultData());
-//			System.out.println(fileModel.getFileSource());
+			FileModel fileModel = (FileModel)resultCmd.getResultData();
+			System.out.println(resultCmd.getResultData());
+			System.out.println(fileModel.getFileSource());
 		}
 	}
 	
@@ -199,7 +199,7 @@ public class CCommandExample2 {
 	{
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
+		inHash.put("TARGET_PORT", "35400");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
@@ -230,7 +230,7 @@ public class CCommandExample2 {
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");  
 //		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "35400");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		
@@ -259,7 +259,7 @@ public class CCommandExample2 {
 		
 		HashMap inHash = new HashMap();
 		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "34000");
+		inHash.put("TARGET_PORT", "35400");
 		inHash.put("CONNECT_TYPE", "A");
 		inHash.put("MACHINE_TYPE", "S");
 		

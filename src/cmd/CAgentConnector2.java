@@ -139,10 +139,10 @@ public class CAgentConnector2 extends AbstractConnector {
 						file.setSize( getFileSize(fileObj.getLong("size")) );
 					}
 					if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
-//					file.setFileSource(conn.ReadFileByte());
+					file.setFileSource(conn.ReadFileByte());
 					
 					resultCmd.setResult(true, null, file);
-					resultCmd.setValue(ICFConstants.CMD_RESULT, file);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
 				}else {
 					resultCmd.setResult(false, message, null);
 				}				
