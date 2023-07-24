@@ -42,7 +42,7 @@ Metis4RL_CF=-m64  -g -c  -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_R
 LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent -lelf -lsocket -ldl
 LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent -lelf -ldl -lnsl  -lm 
 
-LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent  -lpthread -lssl -lcrypto -lnsl -lm  -L/usr/local/lib -L/usr/lib64
+LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent  -lpthread -lssl -lcrypto -lnsl -lm  -L/usr/local/lib 
 
 #AIX
 #COMP	= xlC_r
@@ -55,7 +55,7 @@ LIBS=$(ORA_LIB)
 LIBS=$(ORA_LIB) -ldl -lpthread 
 COMP=g++
 LINK=g++
-#LNK_CF=-m64 -O -o $(DIR_OUT)/cfagent
+LNK_CF=-m64 -O -o $(DIR_OUT)/cfagent
 Metis4RL_CF=-g -c  -m64 -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_REENTRANT $(INC_PATH) -Wpointer-arith -Wno-write-strings -g -Wno-format-security -lpthread 
 
 OBJS=BREXDiag.o \
