@@ -104,7 +104,7 @@ public class MTObject {
 		try {
 			m_OutBuffer.writeBytes(strVal);
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return false;
 		}
 

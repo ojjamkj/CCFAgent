@@ -34,7 +34,8 @@ public class CFAPI5J {
 	public int reOpenport = 35400;
 	public int callCount = 0;
 	public OutputStream out = null;
-	public static int maxParamSize = 2048000;  //1048576;
+//	public static int maxParamSize = 2048000;  //1048576;
+	public static int maxParamSize = 1024000000;  //1048576;
 	public byte[] inByteStream = null;
 	public byte[] tempStream = null;
 
@@ -403,6 +404,9 @@ public class CFAPI5J {
 
 	public String ReadString() {
 		return getInBuffer().ReadString();
+	}
+	public String ReadLongString() {
+		return getInBuffer().ReadLongString();
 	}
 	public String ReadFile(String path, String name) {
 		return getInBuffer().ReadFile(path, name);

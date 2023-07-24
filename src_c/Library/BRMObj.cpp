@@ -676,3 +676,44 @@ double CBRMObj::ReadPack(int leng, int m) {
 
 	return dData;
 }
+
+int CBRMObj::WriteLongString(char* lpsz) {
+   long leng;
+   char lenTemp[20];
+   long lenTempLength;
+
+
+   if (lpsz == NULL) {
+      m_Buffer[m_length] = 0;
+      m_Buffer[m_length + 1] = 0;
+      m_length += 2;
+      return -1;
+   }
+   if ((leng = strlen(lpsz)) == 0) {
+      m_Buffer[m_length] = 0;
+      m_Buffer[m_length + 1] = 0;
+      m_length += 2;
+      return 0;
+   }
+   sprintf(lenTemp, "%ld" , leng );
+   lenTempLength = strlen(lenTemp);
+
+   if (BufSizeCheck(lenTempLength))      return -1;
+   if (BufSizeCheck(leng))      return -1;
+
+   m_Buffer[m_length] = (unsigned char)(lenTempLength / 256);
+   m_Buffer[m_length + 1] = (unsigned char)(lenTempLength % 256);
+   m_length += 2;
+
+   memcpy(m_Buffer + m_length, (char*)lenTemp, lenTempLength);
+   memcpy(m_Buffer + m_length+ lenTempLength, (char*)lpsz, leng);
+
+   if (_DEBUG_YN[0] == 'Y') printf("m_length =[%d] [%s][%d] \n", m_length, __FILE__, __LINE__);
+   if (_DEBUG_YN[0] == 'Y') printf("leng =[%d] [%s][%d] \n", leng, __FILE__, __LINE__);
+   if (_DEBUG_YN[0] == 'Y') printf("lenTempLength =[%d] [%s][%d] \n", lenTempLength, __FILE__, __LINE__);
+   m_length += leng+ lenTempLength;
+
+   if (_DEBUG_YN[0] == 'Y') printf("m_allocLength =[%d] [%s][%d] \n", m_length, __FILE__, __LINE__);
+
+   return 0;
+}

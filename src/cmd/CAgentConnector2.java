@@ -1,6 +1,5 @@
 package cmd;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -14,6 +13,7 @@ import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.ICFConstants;
 
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
  
@@ -114,9 +114,8 @@ public class CAgentConnector2 extends AbstractConnector {
 					if(jsonstring== null || "".equals(jsonstring)) {
 						throw new Exception("received file info is null");
 					}
-					JSONObject fileObj = JSONObject.fromObject(jsonstring);
 					
-					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath);
+					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath, true);
 					
 					resultCmd.setResult(true, null, file);
 					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
@@ -255,15 +254,21 @@ public class CAgentConnector2 extends AbstractConnector {
 				
 				if(new Boolean(result).booleanValue()) {
 					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
-					 
-					String jsonstring = conn.ReadString();
+					
+					String jsonstring = conn.ReadLongString();
 					if(jsonstring== null || "".equals(jsonstring)) {
 						throw new Exception("received file info is null");
 					}
+					System.out.println(jsonstring);
+					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
+					int size  = viewDirList.size();
+					ArrayList resultList = new ArrayList();
+					for(int i=0; i<size; i++)
+					{
+						resultList.add(setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false));
+					}
 					
-					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath);
-					
-//					resultCmd.setResult(true, null, file);
+					resultCmd.setResult(true, null, resultList);
 					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
 				}else {
 					resultCmd.setResult(false, message, null);
@@ -278,7 +283,7 @@ public class CAgentConnector2 extends AbstractConnector {
 		return resultCmd;
 	}
 	
-	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath) throws Exception
+	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath, boolean includeSource) throws Exception
 	{
 		FileModel file = new FileModel();
 		
@@ -291,7 +296,7 @@ public class CAgentConnector2 extends AbstractConnector {
 				file.setType( "File" );
 			}
 		}
-		if(fileObj.containsKey("modify_time")) file.setLastModifiedDate(sdf.format(new java.util.Date(fileObj.getLong("modify_time")*1000)));
+		if(fileObj.containsKey("mtime")) file.setLastModifiedDate(sdf.format(new java.util.Date(fileObj.getLong("mtime")*1000)));
 		if(fileObj.containsKey("path")) {
 			String filePath = fileObj.getString("path"); 
 			file.setPath(filePath);					
@@ -306,7 +311,7 @@ public class CAgentConnector2 extends AbstractConnector {
 			file.setSize( getFileSize(fileObj.getLong("size")) );
 		}
 		if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
-		file.setFileSource(conn.ReadFileByte());
+		if(includeSource) file.setFileSource(conn.ReadFileByte());
 		
 		return file;
 	}

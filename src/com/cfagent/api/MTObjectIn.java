@@ -5,12 +5,12 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
- 
+
 public class MTObjectIn {
 	private DataInputStream m_InBuffer;
 	private ByteArrayInputStream byteIn;
 	private String errMsg = "";
- 
+
 	public MTObjectIn(byte[] inData) {
 		byteIn = new ByteArrayInputStream(inData);
 		m_InBuffer = new DataInputStream(byteIn);
@@ -46,9 +46,9 @@ public class MTObjectIn {
 		}
 
 		return dValue;
- 
+
 	}
- 
+
 	public double ReadFraction() {
 
 		return ReadDouble();
@@ -68,16 +68,43 @@ public class MTObjectIn {
 			//System.out.println("Total ReadString leng("+leng+")");
 			if( leng ==26990) {
 				int tx2 = (int) m_InBuffer.readByte() & 0xff;
-//				System.out.println("ReadString tx leng("+ ((tx*256)+tx2)+") tx2("+tx2+")");
+				//				System.out.println("ReadString tx leng("+ ((tx*256)+tx2)+") tx2("+tx2+")");
 			}
 			m_InBuffer.read(byteData, 0, leng);
 			ret= (new String(byteData));
 			return ret;
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return " ";
 		}
- 
+
+	}
+	public String ReadLongString() {
+		try {
+			int leng;
+			byte[] byteData = null;
+			int tx;
+			String ret="";
+			leng = (int) m_InBuffer.readByte() & 0xff;
+			tx = (int) m_InBuffer.readByte() & 0xff;
+			leng = (leng * 256) + tx;
+//			System.out.println(" leng : "+leng);         
+			byteData = new byte[leng];
+			m_InBuffer.read(byteData, 0, leng);
+			ret= (new String(byteData));
+//			System.out.println(" ret : "+ret.toString());         
+
+			leng= Integer.parseInt(ret.trim());
+			byteData = new byte[leng];
+//			System.out.println(" leng2 : "+ leng );         
+			m_InBuffer.read(byteData, 0, leng);
+			ret= (new String(byteData));
+			return ret;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return " ";
+		}
+
 	}
 	public  String ReadFile(String path,String fileName) {
 		try {
@@ -86,31 +113,31 @@ public class MTObjectIn {
 			int tx; 
 			String ret="";
 			leng=Integer.parseInt(ReadString() );
-					
+
 			byteData = new byte[leng];
 			long start , end;
 			start =System.currentTimeMillis();
-			System.out.println("Total ReadString leng("+leng+")");
+			//System.out.println("Total ReadString leng("+leng+")");
 			int size=m_InBuffer.read(byteData, 0, leng);
 			end =System.currentTimeMillis();
-			System.out.println("Read ("+(end-start)+")");
+			//System.out.println("Read ("+(end-start)+")");
 			File file=new File(path+fileName);
 			FileOutputStream fos = new FileOutputStream(file);
 			fos.write(byteData); 
 			fos.flush();
 			fos.close();
 			start =System.currentTimeMillis();
-			System.out.println("write ("+(start-end)+")");
-//			ret= (new String(byteData));
+			//System.out.println("write ("+(start-end)+")");
+			//			ret= (new String(byteData));
 			return " ";
 		} catch (IOException ie) {
-			System.err.println(ie.toString());
+			ie.printStackTrace();
 			return " ";
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return " ";
 		}
- 
+
 	}
 	public String ReadFile() {
 		try {
@@ -127,10 +154,10 @@ public class MTObjectIn {
 			ret= (new String(byteData));
 			return ret;
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return " ";
 		}
- 
+
 	}
 	public  byte[] ReadFileByte() {
 		try {
@@ -139,7 +166,7 @@ public class MTObjectIn {
 			int tx; 
 			String ret="";
 			leng=Integer.parseInt(ReadString() );
-					
+
 			byteData = new byte[leng];
 			long start , end;
 			start =System.currentTimeMillis();
@@ -149,45 +176,47 @@ public class MTObjectIn {
 			System.out.println("Read ("+(end-start)+")");
 			start =System.currentTimeMillis();
 			System.out.println("write ("+(start-end)+")");
-//			ret= (new String(byteData));
+			//			ret= (new String(byteData));
 			return byteData;
 		} catch (IOException ie) {
-			System.err.println(ie.toString());
+			ie.printStackTrace();
 			return new byte[0];
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return new byte[0];
 		}
- 
+
 	}
 	public String ReadString(String charsetName) {
-        try {
-            int leng;
-            byte[] byteData = null;
-            int tx;
-  
-            leng = (int) m_InBuffer.readByte() & 0xff;
-            tx = (int) m_InBuffer.readByte() & 0xff;
-            leng = leng * 256 + tx;
-            byteData = new byte[leng];
+		try {
+			int leng;
+			byte[] byteData = null;
+			int tx;
 
-            m_InBuffer.read(byteData, 0, leng);
-            if(charsetName!=null && !charsetName.trim().equals("")){
-                return new String(byteData, charsetName);
-            }else{
-                return (new String(byteData));
-            }
-        } catch (Exception e) {
-            System.err.println(e.toString());
-            return " ";
-        }
- 
-    }
- 
+			leng = (int) m_InBuffer.readByte() & 0xff;
+			tx = (int) m_InBuffer.readByte() & 0xff;
+			leng = leng * 256 + tx;
+			byteData = new byte[leng];
+
+			m_InBuffer.read(byteData, 0, leng);
+			if(charsetName!=null && !charsetName.trim().equals("")){
+				return new String(byteData, charsetName);
+			}else{
+				return (new String(byteData));
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return " ";
+		}
+
+	}
+
 	public void setBuffer(byte[] inData) {
 		// byteIn.reset();
 
 		byteIn = new ByteArrayInputStream(inData);
 		m_InBuffer = new DataInputStream(byteIn);
 	}
+
+	
 }

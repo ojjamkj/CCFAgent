@@ -50,6 +50,7 @@ public:
     int   WriteLong( long );
 //	void  WriteLongPosition( long lVal, int pos );
     int   WriteString( char* );
+    int   WriteLongString(char* lpsz);
     int   WriteDouble( double );
     int   WritePack( double dbl, int leng, int m );
 	int   WriteByteFile(char* lpsz, int size, int first, long totsize);

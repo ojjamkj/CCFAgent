@@ -158,4 +158,28 @@ public class MTObjectOut {
 	public String errMsg() {
 		return errMsg;
 	}
+	
+	public boolean WriteLongString(String strVal) {
+		errMsg = "";
+		if (strVal == null) {
+			strVal = "";
+		}
+		int leng = 0;
+		byte[] bytBytes = { 0 };
+		try {
+			leng = strVal.getBytes().length;
+			bytBytes = strVal.getBytes();
+			String lengTemp=""+leng;
+			byte b1 = (byte) (lengTemp.getBytes().length / 256);
+			byte b2 = (byte) (lengTemp.getBytes().length % 256);
+			m_OutBuffer.writeByte(b1);
+			m_OutBuffer.writeByte(b2);
+			m_OutBuffer.write(lengTemp.getBytes());
+			m_OutBuffer.write(bytBytes);
+			return true;
+		} catch (Exception e) {
+			errMsg = e.toString();
+			return false;
+		}
+	}	
 }
