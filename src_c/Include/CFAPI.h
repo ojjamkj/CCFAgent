@@ -77,6 +77,7 @@ public:
 		void API01(CBRMObj  *m_ObjBuffer, int m_itemCnt,int pChildSoc , CCSManager *pManage);
 		void API02(CBRMObj  *m_ObjBuffer, int m_itemCnt,int pChildSoc , CCSManager *pManage);
 		void API03_PING(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
+		void API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 		void API06_VIEWFILE6(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 //		void API03(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 //		void API03(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);

@@ -277,6 +277,11 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
+	if (strcmp(PgmId, "4") == 0) {
+		cfapi.API04_VIEWDIR(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
 	if (strcmp(PgmId, "6") == 0) {
 		cfapi.API06_VIEWFILE6(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet(); 

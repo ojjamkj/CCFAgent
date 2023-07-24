@@ -45,18 +45,27 @@ import com.gtone.cf.util.ICFConstants;
 import jspeed.base.util.StringHelper;
 
 public class CCommandExample2 {
+	
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
+			HashMap inHash = new HashMap();
+			inHash.put("TARGET_IP", "172.16.15.15");
+			inHash.put("TARGET_PORT", "30502");
+//			inHash.put("TARGET_IP", "127.0.0.1");
+//			inHash.put("TARGET_PORT", "30502");
+			inHash.put("CONNECT_TYPE", "B");
+			inHash.put("MACHINE_TYPE", "S");
+			
 			CCommandExample2 obj = new CCommandExample2();
 			//1.CMD_AGENT_PING
-// 			obj.ping(); 			// 일부처리
+// 			obj.ping(inHash); 			// 일부처리
 			//2.CMD_CREATEFILE
 //			obj.createFile();		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-			obj.viewFile(); 		// 일부처리
+//			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
 //			obj.build();
 			//5.CMD_DELETEFILE
@@ -66,7 +75,7 @@ public class CCommandExample2 {
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
-//			obj.viewDir();
+			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
 //			obj.scanToFile();
 
@@ -75,15 +84,9 @@ public class CCommandExample2 {
 		}
 	}
 	/// 여기서 부터 커맨드 하나씩 붙이면 됩니다.
-	public void ping() throws Exception
+	public void ping(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "35400");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-//		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "B");
-		inHash.put("MACHINE_TYPE", "S");
+		
 
 
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_AGENT_PING );
@@ -335,20 +338,14 @@ public class CCommandExample2 {
 	}
 	
 	
-	public void viewDir() throws Exception
+	public void viewDir(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 		ArrayList includeFilter = new ArrayList();
 		includeFilter.add("/*.java");
 		ArrayList ignoreFilter = new ArrayList();
 		ignoreFilter.add("**.bak");
 		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_SUB_DIR", "Y"); //하위 디렉토리 포함 여부
 		inHash.put("TARGET_REGEXP", ""); //검색 정규식, 옵션
 		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션

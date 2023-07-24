@@ -1,6 +1,8 @@
 
 #include "CFAPI.h"
 #include <utime.h>
+#include <jansson.h>
+#include <dirent.h>
 
 CFAPI::CFAPI(){
 
@@ -154,6 +156,56 @@ void CFAPI::API02(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManag
 {
 
 }
+
+void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
+{
+	printf("[CMD_VIEWDIR] \n");
+    m_pChildSoc=pChildSoc;
+	m_pManager = pManage;
+	m_ObjBuffer = m_ObjBuffer2;
+	char temp[100];
+	char targetPath[1000];
+	char includeSub[1];
+
+	m_ObjBuffer->ReadString(temp);
+	// 0. read parameter
+	m_ObjBuffer->ReadString(targetPath);//
+	printf("TARGET_PATH [%s]\n", targetPath);
+
+	m_ObjBuffer->ReadString(includeSub);//
+	printf("INCLUDE_SUB_DIR [%s]\n", includeSub);
+
+	m_ObjBuffer->ReadString(temp);//
+	printf("DEFAULT_GET_ROWS [%s]\n", temp);
+
+	m_ObjBuffer->ReadString(temp);
+
+
+	// 1. get directory info
+	json_t *root_info = get_directory_info(targetPath);
+	char *json_str = json_dumps(root_info, JSON_INDENT(2));
+
+	printf("json string = %s", json_str);
+//	FILE *fp = fopen("directory_info.json", "w");
+//	if (fp) {
+//	        fprintf(fp, "%s\n", json_str);
+//	        fclose(fp);
+//	    }
+
+	free(json_str);
+	json_decref(root_info);
+
+
+	// 2. write final result (success)
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(""); //message
+
+
+}
+
 
 void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {

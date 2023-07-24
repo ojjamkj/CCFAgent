@@ -1,5 +1,5 @@
 #define AES_BLOCK_SIZE  32
-
+#define DIR_SEPARATOR '/'
 
 #ifdef _WIN32
 #include <direct.h>
@@ -11,6 +11,8 @@
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h>
+#include 	<jansson.h>
+#include 	<dirent.h>
 #include    <ctype.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
@@ -40,7 +42,9 @@
 #include    <sys/time.h>
 #endif
 
-#define DIR_SEPARATOR '/'
+
+
+
 
 const char* getFileNameFromPath(const char* path) {
     const char* last_sep = strrchr(path, '/');
@@ -253,7 +257,36 @@ int createFile(char* filename, const unsigned char* data, size_t length, char *m
 	return true;
 }
 
-int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
+json_t* get_directory_info(const char* dir_path) {
+    json_t *dir_info = json_object();
+
+    DIR *dir = opendir(dir_path);
+    if (!dir) {
+        fprintf(stderr, "Error opening directory: %s\n", dir_path);
+        return dir_info;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char path[PATH_MAX];
+        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+
+        if (entry->d_type == DT_DIR) {
+            json_t *subdir_info = get_directory_info(path);
+            json_object_set_new(dir_info, entry->d_name, subdir_info);
+        } else if (entry->d_type == DT_REG) {
+            json_object_set_new(dir_info, entry->d_name, json_string("file"));
+        }
+    }
+
+    closedir(dir);
+    return dir_info;
+}
+/*int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
 	FILE* file = fopen(file_path, "rb");
 	unsigned char digest[MD5_DIGEST_LENGTH];
 	unsigned char buffer[CHECK_SUM_BUFFER_SIZE];
@@ -283,7 +316,7 @@ int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg)
 		sprintf(error_msg, "Ã¼Å©¼¶ ¿À·ù.");
 		return false;
 	}	
-}
+}*/
 
 int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
 	unsigned char buffer[1024];

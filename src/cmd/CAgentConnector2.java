@@ -2,6 +2,7 @@ package cmd;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 //import org.json.simple.JSONObject;
@@ -108,38 +109,14 @@ public class CAgentConnector2 extends AbstractConnector {
 				
 				if(new Boolean(result).booleanValue()) {
 					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
-					FileModel file = new FileModel();
+					 
 					String jsonstring = conn.ReadString();
 					if(jsonstring== null || "".equals(jsonstring)) {
 						throw new Exception("received file info is null");
 					}
 					JSONObject fileObj = JSONObject.fromObject(jsonstring);
 					
-					if(fileObj.containsKey("filename")) file.setFilename(fileObj.getString("filename"));
-					if(fileObj.containsKey("is_dir")) {
-						file.setIsDirectory(fileObj.getInt("is_dir")==1? true: false);
-						if(file.isDirectory()) {
-							file.setType( "DIR" );
-						}else {
-							file.setType( "File" );
-						}
-					}
-					if(fileObj.containsKey("modify_time")) file.setLastModifiedDate(sdf.format(new java.util.Date(fileObj.getLong("modify_time")*1000)));
-					if(fileObj.containsKey("path")) {
-						String filePath = fileObj.getString("path"); 
-						file.setPath(filePath);					
-						file.setRootPath(remoteTargetRootPath);
-						file.setRelPath(filePath.replaceFirst(remoteTargetRootPath, "")); // root부터 상태 경로
-					}
-					 
-					if(fileObj.containsKey("read")) file.setCanRead(fileObj.getInt("read")==1? true: false);
-					if(fileObj.containsKey("write")) file.setCanWrite(fileObj.getInt("write")==1? true: false);
-					if(fileObj.containsKey("size")) {
-						file.setLength(fileObj.getLong("size"));
-						file.setSize( getFileSize(fileObj.getLong("size")) );
-					}
-					if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
-					file.setFileSource(conn.ReadFileByte());
+					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath);
 					
 					resultCmd.setResult(true, null, file);
 					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
@@ -255,6 +232,84 @@ public class CAgentConnector2 extends AbstractConnector {
 		}
 		return cmd;
 	}
+	
+	public BaseCommand CMD_VIEWDIR(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+		BaseCommand resultCmd = new FileDeployCommand();
+		try {
+			conn.WriteString( (String) param.get("TARGET_PATH") );
+			conn.WriteString( (String) param.get("INCLUDE_SUB_DIR") );
+			conn.WriteString( (String) param.get("DEFAULT_GET_ROWS") );
+//			conn.WriteString( (String) param.get("TARGET_REGEXP") );
+//			conn.WriteString( (String) param.get("INCLUDE_FILTER") );
+//			conn.WriteString( (String) param.get("IGNORE_FILTER") );
+//			conn.WriteString( (String) param.get("START_ROW") );
+//			conn.WriteString( (String) param.get("DEFAULT_GET_ROWS") );
+			
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
+					 
+					String jsonstring = conn.ReadString();
+					if(jsonstring== null || "".equals(jsonstring)) {
+						throw new Exception("received file info is null");
+					}
+					
+					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath);
+					
+//					resultCmd.setResult(true, null, file);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+	
+	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath) throws Exception
+	{
+		FileModel file = new FileModel();
+		
+		if(fileObj.containsKey("filename")) file.setFilename(fileObj.getString("filename"));
+		if(fileObj.containsKey("is_dir")) {
+			file.setIsDirectory(fileObj.getInt("is_dir")==1? true: false);
+			if(file.isDirectory()) {
+				file.setType( "DIR" );
+			}else {
+				file.setType( "File" );
+			}
+		}
+		if(fileObj.containsKey("modify_time")) file.setLastModifiedDate(sdf.format(new java.util.Date(fileObj.getLong("modify_time")*1000)));
+		if(fileObj.containsKey("path")) {
+			String filePath = fileObj.getString("path"); 
+			file.setPath(filePath);					
+			file.setRootPath(remoteTargetRootPath);
+			file.setRelPath(filePath.replaceFirst(remoteTargetRootPath, "")); // root부터 상태 경로
+		}
+		 
+		if(fileObj.containsKey("read")) file.setCanRead(fileObj.getInt("read")==1? true: false);
+		if(fileObj.containsKey("write")) file.setCanWrite(fileObj.getInt("write")==1? true: false);
+		if(fileObj.containsKey("size")) {
+			file.setLength(fileObj.getLong("size"));
+			file.setSize( getFileSize(fileObj.getLong("size")) );
+		}
+		if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
+		file.setFileSource(conn.ReadFileByte());
+		
+		return file;
+	}
 	public BaseCommand remoteCmdRun(HashMap globalMap, HashMap param, BaseCommand cmd) throws Exception{
 		CFAPI5J conn = new CFAPI5J();
 		String ip = (String)param.get(ICFConstants.TARGET_IP);
@@ -278,6 +333,9 @@ public class CAgentConnector2 extends AbstractConnector {
 			break;
 		case BaseCommand.CMD_DOSEARCH_ONLY_FILE:
 			resultCmd = CMD_DOSEARCH_ONLY_FILE(conn,param,cmd);
+			break;
+		case BaseCommand.CMD_VIEWDIR:
+			resultCmd = CMD_VIEWDIR(conn,param,cmd);
 			break;
 		}
 		return resultCmd;

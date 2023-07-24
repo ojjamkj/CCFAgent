@@ -337,12 +337,12 @@ int mainCheckSum(int argc, char*argv[]) {
 	const char* file_path = "C:/cfagent/temp/AA.zip";  // 대상 파일 경로 설정
 	char msg[1000];
 	printf("ss\n");
-	if (calculate_md5(file_path, (const char*)"9F4726BACB67649E6AB854B4E5F9F3D4", msg)) {
-		printf("MD5 정상 : \n" );
-	}
-	else {
-		printf("MD5 error :[%s] \n", msg);
-	}
+//	if (calculate_md5(file_path, (const char*)"9F4726BACB67649E6AB854B4E5F9F3D4", msg)) {
+//		printf("MD5 정상 : \n" );
+//	}
+//	else {
+//		printf("MD5 error :[%s] \n", msg);
+//	}
 	if (calculate_sha256(file_path, (const char*)"3419FEF9BC2985578ED76C3B1985A5B6A19DF16091BCCB766B617F656B757C1A", msg)) {
 		printf("SHA-256 정상 : \n");
 	}
