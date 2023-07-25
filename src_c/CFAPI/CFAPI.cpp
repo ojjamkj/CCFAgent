@@ -78,10 +78,73 @@ void CFAPI::listDirectories(const char* path) {
 
 }
 
+void CFAPI::API01(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage) {
+	m_pChildSoc=pChildSoc;
+	m_pManager = pManage;
+	m_ObjBuffer = m_ObjBuffer2;
+	char path[1000];
+	char temp[100];
+	int i;
+	fileCount = 0;
+	m_ObjBuffer->ReadString(temp);// ºó°ª 0
+	// ÇÔ¼ö ÇÏ³ª´ç µÎ¹ø Read
+	m_ObjBuffer->ReadString(temp);	m_ObjBuffer->ReadString(path); //°æ·Î
+
+	listDirectories(path);
+
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)fileCount);//rowcount
+	m_ObjBuffer->WriteLong((long)1);//colcount
+	m_ObjBuffer->WriteByte((unsigned char)1); // end
+	m_ObjBuffer->WriteString("");
+
+
+
+	for (int i = 0; i<1; i++) {
+		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
+	}
+	char str[20];
+	for (int i = 0; i<fileCount; i++) {
+		m_ObjBuffer->WriteString(fileList[i]);
+	}
+
+
+}
+
 void CFAPI::API02(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
 
 }
+
+void CFAPI::API03_PING(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
+{
+	m_pChildSoc=pChildSoc;
+	m_pManager = pManage;
+	m_ObjBuffer = m_ObjBuffer2;
+	char path[1000];
+	char temp[100];
+
+	m_ObjBuffer->ReadString(temp);// ºó°ª 0
+	printf("[%s]\n", temp);
+
+	m_ObjBuffer->ReadString(temp);// ºó°ª 0
+	printf("[%s]\n", temp);
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)0);
+	//	m_ObjBuffer->WriteLong((long)1);//rowcount
+	//	m_ObjBuffer->WriteLong((long)1);//colcount
+	//	m_ObjBuffer->WriteByte((unsigned char)1); // end
+	//	m_ObjBuffer->WriteString("");
+
+	//	for (int i = 0; i<1; i++) {
+	//		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
+	//	}
+	m_ObjBuffer->WriteString("I AM ALIVE");
+}
+
+
 
 void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
@@ -417,6 +480,111 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	//	}
 }
 
+void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
+{
+	printf("[CMD_BUILD] \n");
+	m_pChildSoc=pChildSoc;
+	m_pManager = pManage;
+	m_ObjBuffer = m_ObjBuffer2;
+	char temp[10000];
+
+	char buildLoc[150];
+	char buildFileType[1];
+
+	// 0. read parameter
+	m_ObjBuffer->ReadString(temp);//
+
+	m_ObjBuffer->ReadString(buildLoc);//
+	printf("BUILD LOC [%s]\n", buildLoc);
+
+	m_ObjBuffer->ReadString(buildFileType);//
+	printf("BUILD FILE TYPE [%s]\n", buildFileType );
+
+	// 1. run shell
+    char command[100];
+    char *buffer = NULL;
+    size_t buffer_size = 0;
+    FILE *fp;
+    int return_value;
+
+    // Example shell command: "ls -l" (replace with your desired command)
+//    const char *cmd = "ls -l";
+
+    // Open a pipe to execute the shell command and read its output
+    fp = popen(buildLoc, "r");
+    if (fp == NULL) {
+        m_ObjBuffer->Clear1();
+        m_ObjBuffer->WriteLong((long)0);
+        m_ObjBuffer->WriteLong((long)0);
+
+        // final result
+        m_ObjBuffer->WriteString("false"); //result
+        m_ObjBuffer->WriteString("Failed to run the command."); //message
+        return;
+    }
+
+    // Read the command output line by line and store in dynamically allocated memory
+    while (1) {
+        char *line = NULL;
+        size_t line_size = 0;
+        ssize_t read = getline(&line, &line_size, fp);
+        if (read == -1) {
+            // End of file or error
+            free(line);
+            break;
+        }
+
+        // Resize the buffer to accommodate the new line
+        buffer = (char*)realloc(buffer, buffer_size + read + 1);
+        if (buffer == NULL) {
+            m_ObjBuffer->Clear1();
+            m_ObjBuffer->WriteLong((long)0);
+            m_ObjBuffer->WriteLong((long)0);
+
+            // final result
+            m_ObjBuffer->WriteString("false"); //result
+            m_ObjBuffer->WriteString("Memory allocation failed."); //message
+            return;
+        }
+
+        // Copy the new line to the buffer
+        strncpy(buffer + buffer_size, line, read);
+        buffer_size += read;
+
+        free(line);
+    }
+
+    // Close the pipe
+    pclose(fp);
+
+    // Null-terminate the buffer to make it a valid C string
+    buffer[buffer_size] = '\0';
+
+    // Print the console output
+    printf("%s", buffer);
+
+    // Get the return value of the shell command
+    return_value = WEXITSTATUS(return_value);
+
+
+    printf("\nReturn value: %d\n", return_value);
+    sprintf(temp, "%d", return_value);
+    // Free the allocated memory for the buffer
+
+	// 2. send result
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)0);
+
+	// final result
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(temp); //return value
+	m_ObjBuffer->WriteLongString(buffer); //console output
+
+	free(buffer);
+
+}
+
 void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
 	m_pChildSoc = pChildSoc;
@@ -457,66 +625,7 @@ void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 		m_ObjBuffer->WriteString(temp); //message
 	}
 }
-void CFAPI::API03_PING(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
-{
-	m_pChildSoc=pChildSoc;
-	m_pManager = pManage;
-	m_ObjBuffer = m_ObjBuffer2;
-	char path[1000];
-	char temp[100];
 
-	m_ObjBuffer->ReadString(temp);// ºó°ª 0
-	printf("[%s]\n", temp);
-
-	m_ObjBuffer->ReadString(temp);// ºó°ª 0
-	printf("[%s]\n", temp);
-	m_ObjBuffer->Clear1();
-	m_ObjBuffer->WriteLong((long)0);
-	m_ObjBuffer->WriteLong((long)0);
-	//	m_ObjBuffer->WriteLong((long)1);//rowcount
-	//	m_ObjBuffer->WriteLong((long)1);//colcount
-	//	m_ObjBuffer->WriteByte((unsigned char)1); // end
-	//	m_ObjBuffer->WriteString("");
-
-	//	for (int i = 0; i<1; i++) {
-	//		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
-	//	}
-	m_ObjBuffer->WriteString("I AM ALIVE");
-}
-
-void CFAPI::API01(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage) {
-	m_pChildSoc=pChildSoc;
-	m_pManager = pManage;
-	m_ObjBuffer = m_ObjBuffer2;
-	char path[1000];
-	char temp[100];
-	int i;
-	fileCount = 0;
-	m_ObjBuffer->ReadString(temp);// ºó°ª 0
-	// ÇÔ¼ö ÇÏ³ª´ç µÎ¹ø Read
-	m_ObjBuffer->ReadString(temp);	m_ObjBuffer->ReadString(path); //°æ·Î
-
-	listDirectories(path);
-
-	m_ObjBuffer->Clear1();
-	m_ObjBuffer->WriteLong((long)0);
-	m_ObjBuffer->WriteLong((long)fileCount);//rowcount
-	m_ObjBuffer->WriteLong((long)1);//colcount
-	m_ObjBuffer->WriteByte((unsigned char)1); // end
-	m_ObjBuffer->WriteString("");
-
-
-
-	for (int i = 0; i<1; i++) {
-		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
-	}
-	char str[20];
-	for (int i = 0; i<fileCount; i++) {
-		m_ObjBuffer->WriteString(fileList[i]);
-	}
-
-
-}
 
 void CFAPI::API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {

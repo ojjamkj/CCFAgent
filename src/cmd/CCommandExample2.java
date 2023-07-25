@@ -29,7 +29,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -62,12 +61,12 @@ public class CCommandExample2 {
 			//1.CMD_AGENT_PING
 // 			obj.ping(inHash); 			// 일부처리
 			//2.CMD_CREATEFILE
-//			obj.createFile();		// 일부처리0
+//			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
 //			obj.viewFile(); 		// 일부처리
 			//4.CMD_BUILD
-//			obj.build();
+			obj.build(inHash);
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
@@ -75,7 +74,7 @@ public class CCommandExample2 {
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
-			obj.viewDir(inHash);
+//			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
 //			obj.scanToFile();
 
@@ -198,19 +197,12 @@ public class CCommandExample2 {
 		}
 	}
 	
-	public void build() throws Exception
+	public void build(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
-
-		inHash.put("BUILD_LOC", "D:/50_INSTALL/SampleBiz/dev/eachCall.bat"); //원격지 파일 경로
-		inHash.put("BUILD_FILE_TYPE", "0"); 
-		inHash.put("BUILD_PARAM", new String[] {"param1"});
-		inHash.put("LOG_TYPE", "CONSOLE");
+		inHash.put("BUILD_LOC", "/home/cf/test/changeflow.sh"); //원격지 파일 경로
+//		inHash.put("BUILD_FILE_TYPE", "0"); 
+		inHash.put("BUILD_PARAM", new String[] {"param1", "param2"});
+//		inHash.put("LOG_TYPE", "CONSOLE");
 		inHash.put("BUILD_OUTPUT", "");
 
 		BaseCommand cmd = new FileDeployCommand(  BaseCommand.CMD_BUILD );
@@ -343,7 +335,7 @@ public class CCommandExample2 {
 		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_SUB_DIR", "Y"); //하위 디렉토리 포함 여부
 //		inHash.put("TARGET_REGEXP", "(.)*(.)*"); //검색 정규식, 옵션
-//		inHash.put("TARGET_REGEXP", "(.)*\\.png"); //검색 정규식, 옵션
+		inHash.put("TARGET_REGEXP", "(.)*\\.png"); //검색 정규식, 옵션
 		inHash.put("DEFAULT_GET_ROWS", "10"); //옵션
 		
 		

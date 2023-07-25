@@ -49,13 +49,6 @@
 
 const char* getFileNameFromPath(const char* path) {
     const char* last_sep = strrchr(path, '/');
-#ifdef _WIN32
-    const char* last_sep_windows = strrchr(path, '\\');
-    if (last_sep_windows > last_sep) {
-        last_sep = last_sep_windows;
-    }
-#endif
-
     return last_sep ? last_sep + 1 : path;
 }
 
@@ -565,6 +558,7 @@ unsigned char StringChange(char *pData, char *pSrc, char *pDest) {
 
 	return 1;
 }
+
 
 char* DetailTimeStamp(char *lpszDateTime) {
 	time_t localTime;

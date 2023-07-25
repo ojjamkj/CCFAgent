@@ -281,6 +281,50 @@ public class CAgentConnector2 extends AbstractConnector {
 		return resultCmd;
 	}
 	
+	public BaseCommand CMD_BUILD(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+		BaseCommand resultCmd = new FileDeployCommand();
+		try {
+			String command =  (String) param.get("BUILD_LOC");
+			if(param.containsKey("BUILD_PARAM")) {
+				String[] commandP = (String[])param.get("BUILD_PARAM");
+				for(String c : commandP)
+				{
+					command += " " + c;
+				}
+			}
+			conn.WriteString( command );
+			conn.WriteString( (String) param.get("BUILD_FILE_TYPE") );
+			
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String returnValue =conn.ReadString();
+				String message =conn.ReadLongString();
+				
+				HashMap resultMap = new HashMap();
+				
+				if(new Boolean(result).booleanValue()) {
+					resultMap.put("BUILD_RESULT_RETURN", returnValue);
+					resultMap.put("BUILD_RESULT_CONSOLE", message);
+					
+					resultCmd.setResult(true, null, resultMap);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+	
 	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath, boolean includeSource) throws Exception
 	{
 		FileModel file = new FileModel();
@@ -343,6 +387,9 @@ public class CAgentConnector2 extends AbstractConnector {
 			break;
 		case BaseCommand.CMD_VIEWDIR:
 			resultCmd = CMD_VIEWDIR(conn,param,cmd);
+			break;
+		case BaseCommand.CMD_BUILD:
+			resultCmd = CMD_BUILD(conn,param,cmd);
 			break;
 		}
 		return resultCmd;

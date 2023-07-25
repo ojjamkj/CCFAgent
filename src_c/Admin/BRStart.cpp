@@ -292,6 +292,11 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
+	if (strcmp(PgmId, "15") == 0) {
+		cfapi.API15_BUILD(&m_ObjBuffer, m_itemCnt, m_pChildSoc,(CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
 	if (strcmp(PgmId, "28") == 0) {
 		cfapi.API28_DELETEFILE(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet();
