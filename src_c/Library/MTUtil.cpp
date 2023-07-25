@@ -19,6 +19,7 @@
 #include    "MTUtil.h"
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <regex.h>
 #ifdef WIN32
 #include <sys/timeb.h>
 #include <windows.h>
@@ -211,8 +212,15 @@ int createFile(char* filename, const unsigned char* data, size_t length, char *m
 	return true;
 }
 
-void get_directory_info(const char* dir_path, json_t *dir_info) {
-//    json_t *dir_info = json_array();
+void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid ) {
+
+	if(defaultGetRows>-1){
+		size_t array_length = json_array_size(dir_info);
+		if(array_length >= defaultGetRows){
+			printf("JSON Array Length: %zu\n", array_length);
+			return;
+		}
+	}
 
     DIR *dir = opendir(dir_path);
     if (!dir) {
@@ -231,13 +239,29 @@ void get_directory_info(const char* dir_path, json_t *dir_info) {
         snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
         struct stat file_stat;
         if (stat(path, &file_stat) == 0) {
-        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
-        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
-        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
         	int dir = 0;
         	if (S_ISDIR(file_stat.st_mode)) dir=1;
 
+        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
         	const char* filename = getFileNameFromPath(path);
+
+        	if(!dir && regExpValid){
+        		printf("Regular Expression evaluat...!\n");
+        		int ret = regexec(&regex, path, 0, NULL, 0);
+        		if (ret == 0) {
+        			printf("Matched!\n");
+        		} else if (ret == REG_NOMATCH) {
+        		    printf("No match!\n");
+        		    continue;
+        		} else {
+        			char error_buffer[100];
+        			regerror(ret, &regex, error_buffer, sizeof(error_buffer));
+        			printf("Regex match failed: %s\n", error_buffer);
+        		    continue;
+        		}
+        	}
 
         	json_t *file_info = json_object();
         	json_object_set_new(file_info, "filename", json_string(filename));
@@ -251,9 +275,17 @@ void get_directory_info(const char* dir_path, json_t *dir_info) {
 
         	json_array_append_new(dir_info, file_info);
 //        	printf("file info:  %s\n", file_info );
-        	if (dir) {
-        		get_directory_info(path, dir_info);
+        	if (dir && includeSub) {
+        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid);
             }
+
+        	if(defaultGetRows>-1){
+        		size_t array_length = json_array_size(dir_info);
+        		if(array_length >= defaultGetRows){
+        			printf("JSON Array Length: %zu\n", array_length);
+        			break;
+        		}
+        	}
         }
     }
 

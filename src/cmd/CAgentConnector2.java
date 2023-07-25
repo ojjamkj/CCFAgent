@@ -236,13 +236,9 @@ public class CAgentConnector2 extends AbstractConnector {
 		BaseCommand resultCmd = new FileDeployCommand();
 		try {
 			conn.WriteString( (String) param.get("TARGET_PATH") );
-			conn.WriteString( (String) param.get("INCLUDE_SUB_DIR") );
-			conn.WriteString( (String) param.get("DEFAULT_GET_ROWS") );
-//			conn.WriteString( (String) param.get("TARGET_REGEXP") );
-//			conn.WriteString( (String) param.get("INCLUDE_FILTER") );
-//			conn.WriteString( (String) param.get("IGNORE_FILTER") );
-//			conn.WriteString( (String) param.get("START_ROW") );
-//			conn.WriteString( (String) param.get("DEFAULT_GET_ROWS") );
+			conn.WriteString( (param.get("TARGET_REGEXP") != null) ? (String) param.get("TARGET_REGEXP") : "" );
+			conn.WriteString( (param.get("INCLUDE_SUB_DIR") != null && "Y".equals((String) param.get("INCLUDE_SUB_DIR"))) ? "Y" : "N"   );
+			conn.WriteString( (param.get("DEFAULT_GET_ROWS") != null) ?((String) param.get("DEFAULT_GET_ROWS")) : "-1" );
 			
 			conn.MBRS_Run();
 			
@@ -259,13 +255,15 @@ public class CAgentConnector2 extends AbstractConnector {
 					if(jsonstring== null || "".equals(jsonstring)) {
 						throw new Exception("received file info is null");
 					}
-					System.out.println(jsonstring);
+//					System.out.println(jsonstring);
 					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
 					int size  = viewDirList.size();
+					System.out.println("jsonstring size = " + size);
 					ArrayList resultList = new ArrayList();
 					for(int i=0; i<size; i++)
 					{
-						resultList.add(setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false));
+						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
+						if(fileModel != null) resultList.add(fileModel);
 					}
 					
 					resultCmd.setResult(true, null, resultList);
@@ -286,8 +284,12 @@ public class CAgentConnector2 extends AbstractConnector {
 	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath, boolean includeSource) throws Exception
 	{
 		FileModel file = new FileModel();
+		if(!fileObj.containsKey("filename")) return null;
 		
-		if(fileObj.containsKey("filename")) file.setFilename(fileObj.getString("filename"));
+		if(fileObj.containsKey("filename")) {
+			file.setFilename(fileObj.getString("filename"));
+			System.out.println(fileObj.getString("filename"));
+		}
 		if(fileObj.containsKey("is_dir")) {
 			file.setIsDirectory(fileObj.getInt("is_dir")==1? true: false);
 			if(file.isDirectory()) {

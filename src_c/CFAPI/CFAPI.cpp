@@ -3,6 +3,7 @@
 #include <utime.h>
 #include <jansson.h>
 #include <dirent.h>
+#include <regex.h>
 
 CFAPI::CFAPI(){
 
@@ -90,28 +91,53 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 	m_ObjBuffer = m_ObjBuffer2;
 	char temp[100];
 	char targetPath[1000];
-	char includeSub[1];
+	char targetRegExp[200];
+	int includeSub = 0;
+	int defaultGetRows = -1;
+
 
 	m_ObjBuffer->ReadString(temp);
 	// 0. read parameter
 	m_ObjBuffer->ReadString(targetPath);//
 	printf("TARGET_PATH [%s]\n", targetPath);
 
-	m_ObjBuffer->ReadString(includeSub);//
-	printf("INCLUDE_SUB_DIR [%s]\n", includeSub);
+	m_ObjBuffer->ReadString(targetRegExp);//
+	printf("TARGET_REGEXP [%s] [%d]\n", targetRegExp, strlen(targetRegExp));
+
+	regex_t regex;
+	int regExpValid = 0;
+	if(strlen(targetRegExp)>0){
+		// Compile the regular expression
+		int ret = regcomp(&regex, targetRegExp, REG_EXTENDED);
+		if (ret != 0) {
+			printf("Error compiling regex\n");
+		}else{
+			regExpValid = 1;
+		}
+	}else{
+		int ret = regcomp(&regex, "(.)*(.)*", REG_EXTENDED);
+	}
+	printf("TARGET_REGEXP VALID [%d]\n", regExpValid);
+
+	m_ObjBuffer->ReadString(temp);//
+	printf("INCLUDE_SUB_DIR [%s]\n", temp);
+	if (strcmp(temp, "Y") == 0) {
+		includeSub = 1;
+	}
 
 	m_ObjBuffer->ReadString(temp);//
 	printf("DEFAULT_GET_ROWS [%s]\n", temp);
+	defaultGetRows = atoi( temp );
 
-	m_ObjBuffer->ReadString(temp);
+//	m_ObjBuffer->ReadString(temp);
 
 
 	// 1. get directory info
 	json_t *dir_info = json_array();
-	get_directory_info(targetPath, dir_info);
+	get_directory_info(targetPath, dir_info, includeSub, defaultGetRows, regex, regExpValid);
 	char *json_str = json_dumps(dir_info, JSON_INDENT(2));
 
-	printf("json string = %s\n", json_str);
+//	printf("json string = %s\n", json_str);
 	printf("Size of JSON string: %zu\n", strlen(json_str));
 	//	FILE *fp = fopen("directory_info.json", "w");
 	//	if (fp) {
@@ -129,6 +155,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 
 	free(json_str);
 	json_decref(dir_info);
+	regfree(&regex);
 
 }
 

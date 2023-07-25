@@ -19,7 +19,7 @@ import java.util.Vector;
 
 public class CFAPI5J {
 	public  static String   brexPrimary = "172.16.15.15"; 
-	public  static int      brexPort = 35400;
+	public  static int      brexPort = 30502;
 	private static boolean isIP= true;
 	private static boolean isReadMaxParamSize = true;
 	private static int     maxInOutBufferSize;  

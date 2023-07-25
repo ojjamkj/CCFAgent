@@ -340,18 +340,11 @@ public class CCommandExample2 {
 	
 	public void viewDir(HashMap inHash) throws Exception
 	{
-		ArrayList includeFilter = new ArrayList();
-		includeFilter.add("/*.java");
-		ArrayList ignoreFilter = new ArrayList();
-		ignoreFilter.add("**.bak");
-		
 		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_SUB_DIR", "Y"); //하위 디렉토리 포함 여부
-		inHash.put("TARGET_REGEXP", ""); //검색 정규식, 옵션
-		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
-		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션
-		inHash.put("START_ROW", "0"); //옵션
-		inHash.put("DEFAULT_GET_ROWS", "500"); //옵션
+//		inHash.put("TARGET_REGEXP", "(.)*(.)*"); //검색 정규식, 옵션
+//		inHash.put("TARGET_REGEXP", "(.)*\\.png"); //검색 정규식, 옵션
+		inHash.put("DEFAULT_GET_ROWS", "10"); //옵션
 		
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_VIEWDIR );
@@ -367,20 +360,20 @@ public class CCommandExample2 {
 			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
 			for(FileModel model : files)
 			{
-				System.out.println(model.getPath());
-				System.out.println(model.getSize());
-				System.out.println(model.getCanRead());
-				System.out.println(model.isCanWrite());
-				System.out.println(model.getFilename());
-				System.out.println(model.getFileSource());
-				System.out.println(model.isDirectory());
-				System.out.println(model.getLastModifiedDate());
-				System.out.println(model.getLength());
-				System.out.println(model.getParent());
-				System.out.println(model.getRelPath());
-				System.out.println(model.getRootPath());
-				System.out.println(model.getType());
-				System.out.println("");
+//				System.out.println(model.getPath());
+//				System.out.println(model.getSize());
+//				System.out.println(model.getCanRead());
+//				System.out.println(model.isCanWrite());
+//				System.out.println(model.getFilename());
+//				System.out.println(model.getFileSource());
+//				System.out.println(model.isDirectory());
+//				System.out.println(model.getLastModifiedDate());
+//				System.out.println(model.getLength());
+//				System.out.println(model.getParent());
+//				System.out.println(model.getRelPath());
+//				System.out.println(model.getRootPath());
+//				System.out.println(model.getType());
+//				System.out.println("");
 			}	
 		}
 	}
