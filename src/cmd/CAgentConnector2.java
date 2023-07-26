@@ -286,6 +286,93 @@ public class CAgentConnector2 extends AbstractConnector {
 		return resultCmd;
 	}
 	
+	public BaseCommand CMD_DOSEARCH_ONLY_DIR(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+
+		BaseCommand resultCmd = new FileDeployCommand(); 
+		try {
+			
+			conn.WriteString( (String) param.get("TARGET_PATH") );
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
+					
+					String jsonstring = conn.ReadLongString();
+					if(jsonstring== null || "".equals(jsonstring)) {
+						throw new Exception("received dir info is null");
+					}
+
+					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
+					int size  = viewDirList.size();
+					System.out.println("jsonstring size = " + size);
+					ArrayList resultList = new ArrayList();
+					for(int i=0; i<size; i++)
+					{
+						JSONObject dirObj = (JSONObject)viewDirList.get(i);
+						if(dirObj.containsKey("path")) {
+							resultList.add(dirObj.get("path"));
+						}
+					}
+					
+					resultCmd.setResult(true, null, resultList);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+	
+	public BaseCommand CMD_SCANDIR_TO_FILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+
+		BaseCommand resultCmd = new FileDeployCommand(); 
+		try {
+			
+			conn.WriteString( (String) param.get("TARGET_PATH") );
+//			conn.WriteString( (String) param.get("INCLUDE_CHECKSUM") );
+//			conn.WriteString( (String) param.get("INCLUDE_CHECKSUM_TYPE") );
+			 
+//			inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
+//			inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
+			 
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message = conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					FileModel fileModel = new FileModel();
+					fileModel.setFileSource(conn.ReadFileByte()); 
+					resultCmd.setResult(true, null, fileModel);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+	
 	public FileModel setFileModel(CFAPI5J conn, JSONObject fileObj, String remoteTargetRootPath, boolean includeSource) throws Exception
 	{
 		FileModel file = new FileModel();
@@ -295,8 +382,8 @@ public class CAgentConnector2 extends AbstractConnector {
 			file.setFilename(fileObj.getString("filename"));
 			System.out.println(fileObj.getString("filename"));
 		}
-		if(fileObj.containsKey("is_dir")) {
-			file.setIsDirectory(fileObj.getInt("is_dir")==1? true: false);
+		if(fileObj.containsKey("isdir")) {
+			file.setIsDirectory(fileObj.getInt("isdir")==1? true: false);
 			if(file.isDirectory()) {
 				file.setType( "DIR" );
 			}else {
@@ -352,6 +439,13 @@ public class CAgentConnector2 extends AbstractConnector {
 		case BaseCommand.CMD_BUILD:
 			resultCmd = CMD_BUILD(conn,param,cmd);
 			break;
+		case BaseCommand.CMD_DOSEARCH_ONLY_DIR:
+			resultCmd = CMD_DOSEARCH_ONLY_DIR(conn,param,cmd);
+			break;
+		case BaseCommand.CMD_SCANDIR_TO_FILE:
+			resultCmd = CMD_SCANDIR_TO_FILE(conn,param,cmd);
+			break;	
+			
 		}
 		return resultCmd;
 	}

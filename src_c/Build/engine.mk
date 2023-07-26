@@ -55,7 +55,7 @@ LIBS=$(ORA_LIB)
 LIBS=$(ORA_LIB) -ldl -lpthread -ljansson
 COMP=g++
 LINK=g++
-LNK_CF=-m64 -O -o $(DIR_OUT)/cfagent
+LNK_CF=-m64 -O -o $(DIR_OUT)/cfagent -lz
 Metis4RL_CF=-g -c  -m64 -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_REENTRANT $(INC_PATH) -Wpointer-arith -Wno-write-strings -g -Wno-format-security -lpthread -ljansson
 
 OBJS=BREXDiag.o \

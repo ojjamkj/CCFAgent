@@ -25,13 +25,8 @@ cd /home/cf/Dev/Build
 */
       
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 import com.gtone.cf.daemon.cmd.BaseCommand;
 import com.gtone.cf.rt.connect.IConnector;
@@ -64,19 +59,19 @@ public class CCommandExample2 {
 //			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-//			obj.viewFile(inHash); 		// 일부처리
+			obj.viewFile(inHash); 		// 일부처리
 			//4.CMD_BUILD
 //			obj.build(inHash);
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-			obj.searchOnlyFile(inHash);
+//			obj.searchOnlyFile(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
-//			obj.searchOnlyDir();
+//			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR
 //			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
-//			obj.scanToFile();
+//			obj.scanToFile(inHash);
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -103,7 +98,7 @@ public class CCommandExample2 {
 //			System.out.println(resultCmd.getResultData());
 		}
 	}
-	public void createMultiFile(File rootFile) throws Exception
+	public void createMultiFile(HashMap inHash, File rootFile) throws Exception
 	{
 		String rootDir = "D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI";
 //		File rootFile = new File(rootDir);
@@ -117,23 +112,15 @@ public class CCommandExample2 {
 				String fromFile = f.getAbsolutePath();
 				String toFile = f.getAbsolutePath().replaceAll("\\\\", "/").replaceFirst(rootDir, "");
 				toFile = targetRoot + toFile;
-				createFile(fromFile, toFile);
+				createFile(fromFile, toFile, inHash);
 			}else {
-				createMultiFile(f);
+				createMultiFile(inHash, f);
 			}
 		}
 	}
-	public void createFile(String fromFile, String toFile) throws Exception
+	public void createFile(String fromFile, String toFile, HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-//		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
+				
 		
 //		String fromFile = "D:/temp/sinhyup/bucasu4084.c";
 //		String toFile = "/home/cf/tofile/bucasu4084.c";
@@ -187,6 +174,8 @@ public class CCommandExample2 {
 			FileModel fileModel = (FileModel)resultCmd.getResultData();
 			System.out.println(resultCmd.getResultData());
 			System.out.println(fileModel.getFileSource());
+			
+			FileManager.createFile(fileModel.getFileSource(), "D:/temp/AdInsertionDataRequestHardErr.java");
 		}
 	}
 	
@@ -213,14 +202,9 @@ public class CCommandExample2 {
 		
 	}
 	
-	public void deleteFile() throws Exception
+	public void deleteFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");  
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
+		
 		
 		String toFile = "/home/cf/temp/a001";
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
@@ -287,18 +271,10 @@ public class CCommandExample2 {
 	}
 	
 	
-	public void searchOnlyDir() throws Exception
+	public void searchOnlyDir(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
 		
-		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
-		
-		
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_DIR );
 		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
@@ -360,20 +336,14 @@ public class CCommandExample2 {
 		}
 	}
 	
-	public void scanToFile() throws Exception
+	public void scanToFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 		ArrayList includeFilter = new ArrayList();
 		includeFilter.add("/*.java");
 		ArrayList ignoreFilter = new ArrayList();
 		ignoreFilter.add("**.bak");
 		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
 		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
 		inHash.put("INCLUDE_CHECKSUM", "Y"); //체크썸 포함 여부
@@ -393,10 +363,10 @@ public class CCommandExample2 {
 			FileModel model = (FileModel)resultCmd.getResultData();
 			
 			byte[] scanFileSource = model.getFileSource();
-			String savedFile = "d:/Temp/scanResultFile.txt";
+			String savedFile = "d:/Temp/scanResultFile.gz";
 			String unzipFile = "d:/Temp/unzipScanResultFile.txt";
-			FileManager.createFile(scanFileSource, "d:/Temp/scanResultFile.txt");
-			unzip(savedFile, new File(unzipFile));
+			FileManager.createFile(scanFileSource, savedFile);
+//			unzip(savedFile, new File(unzipFile));
 			//아래는 리턴값 샘플, 뉴라인키가 각 데이터의 구분자, 파일은 utf-8로 생성되어야함.
 			/** 
 			 * 
@@ -475,39 +445,39 @@ public class CCommandExample2 {
 
 	} 
 	
-	protected void unzip(String zipFile, File unzipFileName) {
-
-        FileInputStream fileInputStream = null;	
-        FileOutputStream fileOutputStream = null;
-        ZipInputStream zipInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(zipFile);
-            zipInputStream = new ZipInputStream(fileInputStream);
-            ZipEntry zipEntry = null;
-            
-            byte[] buf = new byte[1024];
-            int length = 0;
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                fileOutputStream = new FileOutputStream(unzipFileName);                
-                
-    			while ((length = zipInputStream.read(buf)) != -1) {
-                    fileOutputStream.write(buf, 0, length);
-                }
-
-                zipInputStream.closeEntry();
-                fileOutputStream.flush();
-                fileOutputStream.close();
-            }
-            zipInputStream.close();
-        } catch (IOException e) {
-            // Exception Handling
-        } finally {
-            if(zipInputStream != null) try {zipInputStream.closeEntry(); }catch(Exception e) {}
-            if(fileOutputStream != null) try {fileOutputStream.flush(); }catch(Exception e) {}
-            if(fileOutputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
-            if(zipInputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
-        }
-    }
+//	protected void unzip(String zipFile, File unzipFileName) {
+//
+//        FileInputStream fileInputStream = null;	
+//        FileOutputStream fileOutputStream = null;
+//        ZipInputStream zipInputStream = null;
+//        try {
+//            fileInputStream = new FileInputStream(zipFile);
+//            zipInputStream = new ZipInputStream(fileInputStream);
+//            ZipEntry zipEntry = null;
+//            
+//            byte[] buf = new byte[1024];
+//            int length = 0;
+//            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+//                fileOutputStream = new FileOutputStream(unzipFileName);                
+//                
+//    			while ((length = zipInputStream.read(buf)) != -1) {
+//                    fileOutputStream.write(buf, 0, length);
+//                }
+//
+//                zipInputStream.closeEntry();
+//                fileOutputStream.flush();
+//                fileOutputStream.close();
+//            }
+//            zipInputStream.close();
+//        } catch (IOException e) {
+//            // Exception Handling
+//        } finally {
+//            if(zipInputStream != null) try {zipInputStream.closeEntry(); }catch(Exception e) {}
+//            if(fileOutputStream != null) try {fileOutputStream.flush(); }catch(Exception e) {}
+//            if(fileOutputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+//            if(zipInputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+//        }
+//    }
 
 
 

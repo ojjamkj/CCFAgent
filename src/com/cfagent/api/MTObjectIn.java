@@ -2,8 +2,6 @@ package com.cfagent.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class MTObjectIn {
@@ -106,39 +104,39 @@ public class MTObjectIn {
 		}
 
 	}
-	public  String ReadFile(String path,String fileName) {
-		try {
-			int leng;
-			byte[] byteData = null;
-			int tx; 
-			String ret="";
-			leng=Integer.parseInt(ReadString() );
-
-			byteData = new byte[leng];
-			long start , end;
-			start =System.currentTimeMillis();
-			//System.out.println("Total ReadString leng("+leng+")");
-			int size=m_InBuffer.read(byteData, 0, leng);
-			end =System.currentTimeMillis();
-			//System.out.println("Read ("+(end-start)+")");
-			File file=new File(path+fileName);
-			FileOutputStream fos = new FileOutputStream(file);
-			fos.write(byteData); 
-			fos.flush();
-			fos.close();
-			start =System.currentTimeMillis();
-			//System.out.println("write ("+(start-end)+")");
-			//			ret= (new String(byteData));
-			return " ";
-		} catch (IOException ie) {
-			ie.printStackTrace();
-			return " ";
-		} catch (Exception e) {
-			e.printStackTrace();
-			return " ";
-		}
-
-	}
+//	public  String ReadFile(String path,String fileName) {
+//		try {
+//			int leng;
+//			byte[] byteData = null;
+//			int tx; 
+//			String ret="";
+//			leng=Integer.parseInt(ReadString() );
+//
+//			byteData = new byte[leng];
+//			long start , end;
+//			start =System.currentTimeMillis();
+//			//System.out.println("Total ReadString leng("+leng+")");
+//			int size=m_InBuffer.read(byteData, 0, leng);
+//			end =System.currentTimeMillis();
+//			//System.out.println("Read ("+(end-start)+")");
+//			File file=new File(path+fileName);
+//			FileOutputStream fos = new FileOutputStream(file);
+//			fos.write(byteData); 
+//			fos.flush();
+//			fos.close();
+//			start =System.currentTimeMillis();
+//			//System.out.println("write ("+(start-end)+")");
+//			//			ret= (new String(byteData));
+//			return " ";
+//		} catch (IOException ie) {
+//			ie.printStackTrace();
+//			return " ";
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return " ";
+//		}
+//
+//	}
 	public String ReadFile() {
 		try {
 			int leng;
@@ -159,36 +157,32 @@ public class MTObjectIn {
 		}
 
 	}
-	public  byte[] ReadFileByte() {
+	public  byte[] ReadFileByte() throws Exception {
 		try {
-			int leng;
-			byte[] byteData = null;
-			int tx; 
-			String ret="";
-//			leng=Integer.parseInt(ReadString() );
-			
-			leng = (int) m_InBuffer.readByte() & 0xff;
-			tx = (int) m_InBuffer.readByte() & 0xff;
-			leng = (leng * 256) + tx;
+		int leng;
+		byte[] byteData = null;
+		int tx; 
+		String ret="";
+		leng=Integer.parseInt(ReadString() );
 
-			byteData = new byte[leng];
-			long start , end;
-			start =System.currentTimeMillis();
-//			System.out.println("Total ReadString leng("+leng+")");
-			int size=m_InBuffer.read(byteData, 0, leng);
-			end =System.currentTimeMillis();
-//			System.out.println("Read ("+(end-start)+")");
-			start =System.currentTimeMillis();
-//			System.out.println("write ("+(start-end)+")");
-			//			ret= (new String(byteData));
-			return byteData;
-		} catch (IOException ie) {
-			ie.printStackTrace();
-			return new byte[0];
-		} catch (Exception e) {
-			e.printStackTrace();
-			return new byte[0];
-		}
+		byteData = new byte[leng];
+		
+		
+		
+		int size=m_InBuffer.read(byteData, 0, leng);
+		
+		return byteData;
+		
+	} catch (IOException ie) {
+		ie.printStackTrace();
+		throw(ie);
+		
+	} catch (Exception e) {
+		e.printStackTrace();
+		throw(e);
+		
+	}
+
 
 	}
 	public String ReadString(String charsetName) {

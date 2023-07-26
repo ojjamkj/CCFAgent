@@ -408,10 +408,10 @@ public class CFAPI5J {
 	public String ReadLongString() {
 		return getInBuffer().ReadLongString();
 	}
-	public String ReadFile(String path, String name) {
-		return getInBuffer().ReadFile(path, name);
-	}
-	public byte[] ReadFileByte() {
+//	public String ReadFile(String path, String name) {
+//		return getInBuffer().ReadFile(path, name);
+//	}
+	public byte[] ReadFileByte() throws Exception {
 		return getInBuffer().ReadFileByte();
 	}
 	public String ReadString(String charsetName) {

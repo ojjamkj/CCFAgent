@@ -1,17 +1,10 @@
 #define AES_BLOCK_SIZE  32
 #define DIR_SEPARATOR '/'
 
-#ifdef _WIN32
-#include <direct.h>
-#include <winsock2.h>
-#else
 #include <unistd.h> // For Linux/Unix
-#endif
-
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h>
-#include 	<jansson.h>
 #include 	<dirent.h>
 #include    <ctype.h>
 #include <openssl/md5.h>
@@ -19,12 +12,6 @@
 #include    "MTUtil.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <regex.h>
-#ifdef WIN32
-#include <sys/timeb.h>
-#include <windows.h>
-#endif
-
 #include    <time.h>
 #ifdef		_AIX
 #include	<strings.h>
@@ -79,11 +66,11 @@ json_t* get_file_info(const char* path, char* msg) {
 	json_object_set_new(file_info, "filename", json_string(filename));
 	json_object_set_new(file_info, "path", json_string(path));
 	json_object_set_new(file_info, "size", json_integer((long long)fileInfo.st_size));
-	json_object_set_new(file_info, "is_dir", json_integer(dir));
+	json_object_set_new(file_info, "isdir", json_integer(dir));
 	json_object_set_new(file_info, "mtime", json_integer((long)fileInfo.st_mtime));
 	json_object_set_new(file_info, "read", json_integer(read));
 	json_object_set_new(file_info, "write", json_integer(write));
-	json_object_set_new(file_info, "execute", json_integer(execute));
+//	json_object_set_new(file_info, "execute", json_integer(execute));
 
 	printf("file info:  %s\n", file_info );
 
@@ -205,7 +192,7 @@ int createFile(char* filename, const unsigned char* data, size_t length, char *m
 	return true;
 }
 
-void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid, int includeOnlyFile ) {
+void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid, int includeMode ) {
 
 	if(defaultGetRows>-1){
 		size_t array_length = json_array_size(dir_info);
@@ -260,18 +247,24 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
         	json_object_set_new(file_info, "filename", json_string(filename));
         	json_object_set_new(file_info, "path", json_string(path));
         	json_object_set_new(file_info, "size", json_integer((long long)file_stat.st_size));
-        	json_object_set_new(file_info, "is_dir", json_integer(dir));
+        	json_object_set_new(file_info, "isdir", json_integer(dir));
         	json_object_set_new(file_info, "mtime", json_integer((long)file_stat.st_mtime));
         	json_object_set_new(file_info, "read", json_integer(read));
         	json_object_set_new(file_info, "write", json_integer(write));
-        	json_object_set_new(file_info, "execute", json_integer(execute));
+//        	json_object_set_new(file_info, "relpath", json_string(get_relative_path(path, root_path)));
 
-        	if(!dir || (dir && !includeOnlyFile)){
+//        	json_object_set_new(file_info, "ROOTPATH", "");
+//        	json_object_set_new(file_info, "execute", json_integer(execute));
+
+        	if(dir && (includeMode==0 || includeMode==1)){
+        		json_array_append_new(dir_info, file_info);
+        	}
+        	if(!dir && (includeMode==0 || includeMode==2)){
         		json_array_append_new(dir_info, file_info);
         	}
 //        	printf("file info:  %s\n", file_info );
         	if (dir && includeSub) {
-        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeOnlyFile);
+        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeMode);
             }
 
         	if(defaultGetRows>-1){
@@ -285,8 +278,82 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
     }
 
     closedir(dir);
-//    return dir_info;
+
 }
+
+void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) {
+
+    DIR *dir = opendir(dir_path);
+    if (!dir) {
+        fprintf(stderr, "Error opening directory: %s\n", dir_path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char path[PATH_MAX];
+        //char errorMsg[200];
+        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+        struct stat file_stat;
+        if (stat(path, &file_stat) == 0) {
+        	int dir = 0;
+        	if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+        	const char* filename = getFileNameFromPath(path);
+
+        	json_t *file_info = json_object();
+        	json_object_set_new(file_info, "NAME", json_string(filename));
+        	json_object_set_new(file_info, "ISDIR", json_integer(dir));
+        	json_object_set_new(file_info, "MDATE", json_integer((long)file_stat.st_mtime));
+        	json_object_set_new(file_info, "PATH", json_string(path));
+        	json_object_set_new(file_info, "RELPATH", json_string(get_relative_path(path, root_path)));
+        	json_object_set_new(file_info, "ROOTPATH", json_string(""));
+        	json_object_set_new(file_info, "READ", json_integer(read));
+        	json_object_set_new(file_info, "WRITE", json_integer(write));
+        	json_object_set_new(file_info, "SIZE", json_integer((long long)file_stat.st_size));
+        	json_object_set_new(file_info, "CHECKSUM", json_string(path));
+        	json_object_set_new(file_info, "ERRMSG", json_string(path));
+//        	json_object_set_new(file_info, "execute", json_integer(execute));
+
+
+        	if(!dir){
+        		char *json_str = json_dumps(file_info, JSON_INDENT(2));
+        		if (json_str != NULL) {
+        			fprintf(fw, json_str);
+        			free(json_str);
+        		}
+        	}
+
+        	if (dir) {
+        		scan_directory_info(root_path, path, fw);
+            }
+        }
+    }
+
+    closedir(dir);
+
+}
+
+//void cleanup(FILE *fw, gzFile *zipOut, FILE *in, const char *scanTempFile, const char *zipTempFile)
+//{
+//    if (fw != NULL)
+//        fclose(fw);
+//    if (zipOut != NULL)
+//        gzclose(zipOut);
+//    if (in != NULL)
+//        fclose(in);
+//    if (scanTempFile != NULL)
+//        unlink(scanTempFile);
+//    if (zipTempFile != NULL)
+//        unlink(zipTempFile);
+//}
 /*int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
 	FILE* file = fopen(file_path, "rb");
 	unsigned char digest[MD5_DIGEST_LENGTH];
@@ -318,6 +385,21 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
 		return false;
 	}	
 }*/
+
+const char* get_relative_path(const char* filePath, const char* rootPath ) {
+
+	// Find the position where 'rootPath' occurs in 'filePath'
+	const char* relativePath = strstr(filePath, rootPath);
+
+	if (relativePath != NULL) {
+		// If 'rootPath' is found in 'filePath', move 'relativePath' to the position after 'rootPath'
+		relativePath += strlen(rootPath);
+
+		return relativePath;
+	}
+
+	return "/";
+}
 
 int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
 	unsigned char buffer[1024];
