@@ -64,13 +64,13 @@ public class CCommandExample2 {
 //			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-//			obj.viewFile(); 		// 일부처리
+//			obj.viewFile(inHash); 		// 일부처리
 			//4.CMD_BUILD
-			obj.build(inHash);
+//			obj.build(inHash);
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-//			obj.searchOnlyFile();
+			obj.searchOnlyFile(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
@@ -164,17 +164,10 @@ public class CCommandExample2 {
 		
 	}
 
-	public void viewFile() throws Exception
+	public void viewFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 //		String toFile = "/home/cf/Dev/Src/Admin/BREXDiag.cpp";
-		String toFile = "/home/cf/Dev/Bin/LINUX/cfagent";
+		String toFile = "/home/cf/tofile/src/main/java/com/ccieurope/webservices/adinsertion/AdInsertionDataRequestHardErr.java";
 //		byte[] source = FileManager.viewFile(toFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
 		inHash.put("TARGET_PATH", "/home/cf/Dev/Bin/LINUX"); 
@@ -248,22 +241,19 @@ public class CCommandExample2 {
 		}
 	}
 	
-	public void searchOnlyFile() throws Exception
+	public void searchOnlyFile(HashMap inHash) throws Exception
 	{
 		//NotFoundDirException | FileNotFoundException 에 대한 에러 처리 반드시 필요...원격에서 오류가 발생한 경우 반드시 서버로 해당 오류를 보내주어야함.
 		
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 		//배포시 파라미터 케이스2 (정규식 사용,)
-		inHash.put("TARGET_PATH", "/home/cf/temp/java"); //가져올 파일 수집 최상위 경로
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); //가져올 파일 수집 최상위 경로
 //		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
-		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
+//		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
 //		inHash.put("TARGET_REGEXP", ".*"); //정규식 2번 예시 - 하위 디렉토리 모든 파일 
 //		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression($.*)?.class"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
+		inHash.put("TARGET_REGEXP", "(.)*\\.java"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
+		inHash.put("INCLUDE_SUB", "Y"); 
+		
 		
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_FILE );

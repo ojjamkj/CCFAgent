@@ -205,7 +205,7 @@ int createFile(char* filename, const unsigned char* data, size_t length, char *m
 	return true;
 }
 
-void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid ) {
+void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid, int includeOnlyFile ) {
 
 	if(defaultGetRows>-1){
 		size_t array_length = json_array_size(dir_info);
@@ -266,10 +266,12 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
         	json_object_set_new(file_info, "write", json_integer(write));
         	json_object_set_new(file_info, "execute", json_integer(execute));
 
-        	json_array_append_new(dir_info, file_info);
+        	if(!dir || (dir && !includeOnlyFile)){
+        		json_array_append_new(dir_info, file_info);
+        	}
 //        	printf("file info:  %s\n", file_info );
         	if (dir && includeSub) {
-        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid);
+        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeOnlyFile);
             }
 
         	if(defaultGetRows>-1){

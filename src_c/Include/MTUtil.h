@@ -64,7 +64,7 @@ int calculate_sha256(const char* filename, const char* sha256sum, char* error_ms
 unsigned short calculate_crc32(const char* filename, const char* crcsum, char* error_msg);
 int createFile(char* filename, const unsigned char* data, size_t length, char *msg);
 json_t* get_file_info(const char* path, char* msg);
-void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t targetRegExp, int regExpValid);
+void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t targetRegExp, int regExpValid, int includeOnlyFile);
 char * removeSlash(char* str);
 #endif    //   __INC_MTUTIL
 

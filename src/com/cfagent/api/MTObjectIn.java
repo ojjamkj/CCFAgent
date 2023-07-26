@@ -165,17 +165,21 @@ public class MTObjectIn {
 			byte[] byteData = null;
 			int tx; 
 			String ret="";
-			leng=Integer.parseInt(ReadString() );
+//			leng=Integer.parseInt(ReadString() );
+			
+			leng = (int) m_InBuffer.readByte() & 0xff;
+			tx = (int) m_InBuffer.readByte() & 0xff;
+			leng = (leng * 256) + tx;
 
 			byteData = new byte[leng];
 			long start , end;
 			start =System.currentTimeMillis();
-			System.out.println("Total ReadString leng("+leng+")");
+//			System.out.println("Total ReadString leng("+leng+")");
 			int size=m_InBuffer.read(byteData, 0, leng);
 			end =System.currentTimeMillis();
-			System.out.println("Read ("+(end-start)+")");
+//			System.out.println("Read ("+(end-start)+")");
 			start =System.currentTimeMillis();
-			System.out.println("write ("+(start-end)+")");
+//			System.out.println("write ("+(start-end)+")");
 			//			ret= (new String(byteData));
 			return byteData;
 		} catch (IOException ie) {

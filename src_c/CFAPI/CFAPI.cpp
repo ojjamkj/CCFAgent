@@ -157,6 +157,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 	char targetRegExp[200];
 	int includeSub = 0;
 	int defaultGetRows = -1;
+	int includeOnlyFile = 0;
 
 
 	m_ObjBuffer->ReadString(temp);
@@ -197,7 +198,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 
 	// 1. get directory info
 	json_t *dir_info = json_array();
-	get_directory_info(targetPath, dir_info, includeSub, defaultGetRows, regex, regExpValid);
+	get_directory_info(targetPath, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeOnlyFile);
 	char *json_str = json_dumps(dir_info, JSON_INDENT(2));
 
 //	printf("json string = %s\n", json_str);
@@ -233,7 +234,7 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 	char errorMsg[1000];
 	unsigned char *fileData;
 	long fileLength = 0;
-	char filePath[1000];
+	char filePath[500];
 	char fileName[1000];
 	char *fileName2;
 	char *temp2;
@@ -278,50 +279,48 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 
 	// 2. write file
 	json_t *jsonFileObject = get_file_info(filePath, errorMsg);
-	if (jsonFileObject == NULL) {
-		{
-			m_ObjBuffer->Clear1();
-			m_ObjBuffer->WriteLong((long)0);
-			m_ObjBuffer->WriteLong((long)0);
 
-			m_ObjBuffer->WriteString("false"); //result
-			m_ObjBuffer->WriteString(errorMsg); //error message
-			return;
-		}
-		char *json_str = json_dumps(jsonFileObject, JSON_INDENT(2));
-
-		// 1.send file information
+	if (jsonFileObject == NULL)
+	{
 		m_ObjBuffer->Clear1();
 		m_ObjBuffer->WriteLong((long)0);
 		m_ObjBuffer->WriteLong((long)0);
-		m_ObjBuffer->WriteString("true"); //result
-		m_ObjBuffer->WriteString(""); //message
 
-		m_ObjBuffer->WriteString(json_str);
-
-		free(json_str);
-		json_decref(jsonFileObject);
-
-		// 2. write file
-		long outLeng = m_ObjBuffer->getLength();
-		m_ObjBuffer->setMaxLength(outLeng + fileinfo.st_size);
-		printf("tot fileinfo.st_size =[%d] \n",outLeng+ fileinfo.st_size);
-
-		((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)m_ObjBuffer->m_Buffer, outLeng);
-		unsigned char buffer[10240];
-		size_t bytes_read;
-		int firstWrite = 0;
-		int st = 0;
-		while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-			((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)buffer, bytes_read);
-			printf(" st [%d] \n", st);
-			firstWrite += bytes_read;
-		}
-		fclose(file);
-		//	((CCSManager*)m_pManager)->SocWriteString(m_pChildSoc, (char *)"1234567890" );
-		//	printf("(end)[%s]\n", temp);
-
+		m_ObjBuffer->WriteString("false"); //result
+		m_ObjBuffer->WriteString(errorMsg); //error message
+		return;
 	}
+	char *json_str = json_dumps(jsonFileObject, JSON_INDENT(2));
+
+	// 1.send file information
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(""); //message
+
+	m_ObjBuffer->WriteString(json_str);
+
+	free(json_str);
+	json_decref(jsonFileObject);
+
+	// 2. write file
+	long outLeng = m_ObjBuffer->getLength();
+	m_ObjBuffer->setMaxLength(outLeng + fileinfo.st_size);
+	printf("tot fileinfo.st_size =[%d] \n",outLeng+ fileinfo.st_size);
+
+	((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)m_ObjBuffer->m_Buffer, outLeng);
+	unsigned char buffer[10240];
+	size_t bytes_read;
+	int firstWrite = 0;
+	int st = 0;
+	while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+		((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)buffer, bytes_read);
+		printf(" st [%d] \n", st);
+		firstWrite += bytes_read;
+	}
+	fclose(file);
+
 }
 
 void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
@@ -587,6 +586,7 @@ void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CC
 
 void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
+	printf("[CMD_DELETEFILE] \n");
 	m_pChildSoc = pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -629,24 +629,130 @@ void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 void CFAPI::API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	m_pChildSoc = pChildSoc;
+	printf("[CMD_DOSEARCH_ONLY_FILE] \n");
+	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
-	char path[1000];
+	unsigned char *fileData;
+	struct stat fileinfo;
+
 	char temp[100];
-	char regexPattern[100];
-	int i;
-	fileCount = 0;
-	m_ObjBuffer->ReadString(temp);// ºó°ª 0
-
-	m_ObjBuffer->ReadString(path);// TARGET_PATH
-
-	printf("PATH :[%s] \n", path);
-	m_ObjBuffer->ReadString(regexPattern);// TARGET_REGEXP
-	printf("regexPattern :[%s] \n", regexPattern);
+	char targetPath[1000];
+	char targetRegExp[200];
+	int includeSub = true;
+	int defaultGetRows = -1;
+	int includeOnlyFile = 1;
 
 
-	listFiles(path , regexPattern);
+	m_ObjBuffer->ReadString(temp);
+	// 0. read parameter
+	m_ObjBuffer->ReadString(targetPath);//
+	printf("TARGET_PATH [%s]\n", targetPath);
+
+	m_ObjBuffer->ReadString(targetRegExp);//
+	printf("TARGET_REGEXP [%s] [%d]\n", targetRegExp, strlen(targetRegExp));
+
+	regex_t regex;
+	int regExpValid = 0;
+	if(strlen(targetRegExp)>0){
+		// Compile the regular expression
+		int ret = regcomp(&regex, targetRegExp, REG_EXTENDED);
+		if (ret != 0) {
+			printf("Error compiling regex\n");
+		}else{
+			regExpValid = 1;
+		}
+	}else{
+		int ret = regcomp(&regex, "(.)*(.)*", REG_EXTENDED);
+	}
+	printf("TARGET_REGEXP VALID [%d]\n", regExpValid);
+
+	m_ObjBuffer->ReadString(temp);//
+	printf("INCLUDE_SUB_DIR [%s]\n", temp);
+	if (strcmp(temp, "Y") == 0) {
+		includeSub = 1;
+	}
+
+//	m_ObjBuffer->ReadString(temp);//
+//	printf("DEFAULT_GET_ROWS [%s]\n", temp);
+//	defaultGetRows = atoi( temp );
+
+	//	m_ObjBuffer->ReadString(temp);
+
+
+	// 1. get directory info
+	json_t *dir_info = json_array();
+	get_directory_info(targetPath, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeOnlyFile);
+	char *json_str = json_dumps(dir_info, JSON_INDENT(2));
+
+	//	printf("json string = %s\n", json_str);
+	printf("Size of JSON string: %zu\n", strlen(json_str));
+	//	FILE *fp = fopen("directory_info.json", "w");
+	//	if (fp) {
+	//	        fprintf(fp, "%s\n", json_str);
+	//	        fclose(fp);
+	//	    }
+
+	// 2. write final result (success)
+	m_ObjBuffer->Clear1();
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteLong((long)0);
+	m_ObjBuffer->WriteString("true"); //result
+	m_ObjBuffer->WriteString(""); //message
+	m_ObjBuffer->WriteLongString(json_str); //message
+
+	free(json_str);
+	regfree(&regex);
+
+	// 3. write file
+	size_t array_length = json_array_size(dir_info);
+	printf("Array Length: %zu\n", array_length);
+
+	long allFileSize = 0;
+	for (size_t i = 0; i < array_length; i++) {
+		json_t *element = json_array_get(dir_info, i);
+		long fileSize = (long long)json_integer_value(json_object_get(element, "size"));
+		allFileSize = allFileSize + fileSize;
+	}
+	long outLeng = m_ObjBuffer->getLength();
+	m_ObjBuffer->setMaxLength(outLeng + allFileSize);
+	printf("tot fileinfo.st_size =[%d] \n",outLeng+ allFileSize);
+
+	for (size_t i = 0; i < array_length; i++) {
+		json_t *element = json_array_get(dir_info, i);
+
+		const char* filePath = json_string_value(json_object_get(element, "path"));
+
+		FILE* file = fopen(filePath, "rb");
+		if (file == NULL) {
+//			m_ObjBuffer->Clear1();
+//			m_ObjBuffer->WriteLong((long)0);
+//			m_ObjBuffer->WriteLong((long)0);
+
+//			m_ObjBuffer->WriteString("false"); //result
+//			m_ObjBuffer->WriteString("Failed to open file."); //message
+//			printf("(end)[%s]\n", "Failed to open file.");
+
+			return;
+		}
+
+		((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)m_ObjBuffer->m_Buffer, outLeng);
+		unsigned char buffer[10240];
+		size_t bytes_read;
+		int firstWrite = 0;
+		int st = 0;
+		while ((bytes_read = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+			((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)buffer, bytes_read);
+			printf(" st [%d] \n", st);
+			firstWrite += bytes_read;
+		}
+		fclose(file);
+
+
+	}
+
+	json_decref(dir_info);
+
 
 }
 void CFAPI::generateRandomFileName(char* fileName) {
