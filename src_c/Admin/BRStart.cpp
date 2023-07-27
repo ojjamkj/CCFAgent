@@ -277,6 +277,11 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
+	if (strcmp(PgmId, "4") == 0) {
+		cfapi.API04_VIEWDIR(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
 	if (strcmp(PgmId, "6") == 0) {
 		cfapi.API06_VIEWFILE6(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet(); 
@@ -287,8 +292,13 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
-	if (strcmp(PgmId, "28") == 0) {
-		cfapi.API28_DELETEFILE(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+	if (strcmp(PgmId, "15") == 0) {
+		cfapi.API15_BUILD(&m_ObjBuffer, m_itemCnt, m_pChildSoc,(CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
+	if (strcmp(PgmId, "26") == 0) {
+		cfapi.API26_DOSEARCH_ONLY_DIR(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet();
 		return 0;
 	}
@@ -297,7 +307,16 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
-
+	if (strcmp(PgmId, "28") == 0) {
+		cfapi.API28_DELETEFILE(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
+	if (strcmp(PgmId, "40") == 0) {
+		cfapi.API40_SCANDIR_TO_FILE(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
 
 	/*
 	if (strcmp(PgmId, "26") == 0) {

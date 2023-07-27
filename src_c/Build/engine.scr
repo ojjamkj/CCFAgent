@@ -1,0 +1,5 @@
+cd ../Tmp
+rm -rf *.o
+make -f ./../Build/engine.mk
+cd ../Build
+

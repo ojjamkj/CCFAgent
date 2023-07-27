@@ -1,25 +1,17 @@
 #define AES_BLOCK_SIZE  32
+#define DIR_SEPARATOR '/'
 
-
-#ifdef _WIN32
-#include <direct.h>
-#include <winsock2.h>
-#endif
-
+#include <unistd.h> // For Linux/Unix
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h>
+#include 	<dirent.h>
 #include    <ctype.h>
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 #include    "MTUtil.h"
 #include <sys/types.h>
 #include <sys/stat.h>
-#ifdef WIN32
-#include <sys/timeb.h>
-#include <windows.h>
-#endif
-
 #include    <time.h>
 #ifdef		_AIX
 #include	<strings.h>
@@ -39,66 +31,148 @@
 #endif
 
 
-void printFileAttributes(const char* path) {
-#ifdef WIN32
-	struct _stat fileInfo;
-	if (_stat(path, &fileInfo) != 0) {
-		printf("Failed to get file attributes\n");
-		return;
-	}
 
-	if (fileInfo.st_mode & _S_IFDIR) {
-		printf("Type: Directory\n");
-	}
-	else {
-		printf("Type: File\n");
-	}
 
-	printf("Attributes:\n");
-	DWORD fileAttributes = GetFileAttributes(path);
-	if (fileAttributes != INVALID_FILE_ATTRIBUTES) {
-		if (fileAttributes & FILE_ATTRIBUTE_ARCHIVE) {
-			printf("- Archive\n");
-		}
-		if (fileAttributes & FILE_ATTRIBUTE_HIDDEN) {
-			printf("- Hidden\n");
-		}
-		if (fileAttributes & FILE_ATTRIBUTE_READONLY) {
-			printf("- Read-only\n");
-		}
-		if (fileAttributes & FILE_ATTRIBUTE_SYSTEM) {
-			printf("- System\n");
-		}
-		// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
+
+const char* getFileNameFromPath(const char* path) {
+    const char* last_sep = strrchr(path, '/');
+    return last_sep ? last_sep + 1 : path;
 }
-#else
+
+json_t* get_file_info(const char* path, char* msg) {
 	struct stat fileInfo;
+	int read=0;
+	int write=0;
+	int execute=0;
+	int dir=0;
+
 	if (stat(path, &fileInfo) != 0) {
-		printf("Failed to get file attributes\n");
-		return;
+		sprintf(msg,"Failed to get file attributes");
+		return NULL;
 	}
 
 	if (S_ISDIR(fileInfo.st_mode)) {
-		printf("Type: Directory\n");
-	}
-	else { 
-		printf("Type: File\n");
+		dir = 1;
 	}
 
-	printf("Attributes:\n");
-	if (fileInfo.st_mode & S_IRUSR) {
-		printf("- Owner Read\n");
-	}
-	if (fileInfo.st_mode & S_IWUSR) {
-		printf("- Owner Write\n");
-	}
-	if (fileInfo.st_mode & S_IXUSR) {
-		printf("- Owner Execute\n");
-	}
-#endif
-	// 추가적인 속성들을 필요에 따라 확인하고 출력할 수 있습니다.
+    read = fileInfo.st_mode & S_IRUSR ? 1 : 0;
+    write = fileInfo.st_mode & S_IWUSR ? 1 : 0;
+    execute = fileInfo.st_mode & S_IXUSR ? 1 : 0;
+
+	const char* filename = getFileNameFromPath(path);
+
+	json_t *file_info = json_object();
+
+	json_object_set_new(file_info, "filename", json_string(filename));
+	json_object_set_new(file_info, "path", json_string(path));
+	json_object_set_new(file_info, "size", json_integer((long long)fileInfo.st_size));
+	json_object_set_new(file_info, "isdir", json_integer(dir));
+	json_object_set_new(file_info, "mtime", json_integer((long)fileInfo.st_mtime));
+	json_object_set_new(file_info, "read", json_integer(read));
+	json_object_set_new(file_info, "write", json_integer(write));
+//	json_object_set_new(file_info, "execute", json_integer(execute));
+
+	printf("file info:  %s\n", file_info );
+
+	return file_info;
+
 }
-int createFile(const char* filename, const unsigned char* data, size_t length, char *msg) {
+
+int directoryExists(const char* path) {
+    struct stat info;
+    return stat(path, &info) == 0 && S_ISDIR(info.st_mode);
+}
+
+int createSingleDirectory(const char* path) {
+    return mkdir(path, 0755); // 0755 is the octal value for read/write/execute for owner and read/execute for group and others
+}
+
+int createDirectoriesRecursively(const char* path) {
+    // Check if the directory exists
+    struct stat st;
+    if (stat(path, &st) == 0) {
+        if (S_ISDIR(st.st_mode)) {
+            // The directory already exists
+            return 0;
+        } else {
+            // A file with the same name exists, cannot create directory
+            return 0;
+        }
+    }
+
+    // If the path is root or empty, return
+    if (path[0] == '\0' || (path[0] == DIR_SEPARATOR && path[1] == '\0')) {
+        return 0;
+    }
+
+    // Find the last occurrence of the directory separator (DIR_SEPARATOR)
+    const char* last_sep = path;
+    for (const char* p = path; *p; p++) {
+        if (*p == DIR_SEPARATOR) {
+            last_sep = p;
+        }
+    }
+
+    // Extract the parent directory path
+    size_t parent_len = last_sep - path;
+    char* parent_path = (char*)malloc(parent_len + 1);
+    if (parent_path == NULL) {
+        return -1; // Memory allocation failure
+    }
+    strncpy(parent_path, path, parent_len);
+    parent_path[parent_len] = '\0';
+
+    // Create the parent directory recursively
+    int parent_result = createDirectoriesRecursively(parent_path);
+    free(parent_path); // Free the dynamically allocated memory
+
+    if (parent_result != 0) {
+        return parent_result; // Propagate the error up
+    }
+
+    // Create the current directory
+    return createSingleDirectory(path);
+}
+
+
+
+int createFile(char* filename, const unsigned char* data, size_t length, char *msg) {
+	// 1. create directory
+	char dir_name[300];
+
+	int start_index = 0;
+	char* last_slash = strrchr(filename, '/');
+
+	if (last_slash != NULL) {
+        size_t length = last_slash - filename + 1; // Calculate the length of the substring, including the slash
+        if (length < sizeof(dir_name)) {
+            // Copy the substring from position 0 to the last slash (including the slash)
+            memcpy(dir_name, filename, length);
+            dir_name[length] = '\0'; // Null-terminate the substring
+
+            printf("Substring from 0 to last slash: %s\n", dir_name);
+        } else {
+			sprintf(msg,"Substring buffer too small");
+            return false;
+        }
+    } else {
+    	sprintf(msg,"No slash found in the path.");
+	    return false;
+    }
+
+	printf("Directory name = %s\n", dir_name);
+
+	if (directoryExists(dir_name)) {
+		printf("Directory already exists.\n");
+	}else{
+		int mkdir_result = createDirectoriesRecursively(dir_name);
+		if (!directoryExists(dir_name)) {
+			sprintf(msg,"Error creating directory");
+			return false;
+		}
+	}
+
+	// 2. create file
 	printf("I will create file. [%s]  \n",filename);
 	FILE* file = fopen(filename, "wb");
 	if (file == NULL) {
@@ -118,36 +192,172 @@ int createFile(const char* filename, const unsigned char* data, size_t length, c
 	return true;
 }
 
-int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
-	FILE* file = fopen(file_path, "rb");
-	unsigned char digest[MD5_DIGEST_LENGTH];
-	unsigned char buffer[CHECK_SUM_BUFFER_SIZE];
-	if (!file) {
-		strcpy(error_msg, "파일을 열 수 없습니다.");
-		return 0;
-	}
-	MD5_CTX md5_ctx;
-	MD5_Init(&md5_ctx);
-	size_t bytes;
-	while ((bytes = fread(buffer, 1, CHECK_SUM_BUFFER_SIZE, file)) != 0) {
-		MD5_Update(&md5_ctx, buffer, bytes);
-	}
-	MD5_Final(digest, &md5_ctx);
+void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid, int includeMode ) {
 
-	char md5String[MD5_DIGEST_LENGTH * 2 + 1];
-	memset(md5String, 0xff, MD5_DIGEST_LENGTH * 2 + 1);
-	for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-		sprintf(&md5String[i * 2], "%02X", (unsigned int)digest[i]);
+	if(defaultGetRows>-1){
+		size_t array_length = json_array_size(dir_info);
+		if(array_length >= defaultGetRows){
+			printf("JSON Array Length: %zu\n", array_length);
+			return;
+		}
 	}
-	fclose(file);
 
-	if (strcmp((const char*)md5String, md5sumsrc) == 0) {
-		return true;
+    DIR *dir = opendir(dir_path);
+    if (!dir) {
+        fprintf(stderr, "Error opening directory: %s\n", dir_path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char path[PATH_MAX];
+        //char errorMsg[200];
+        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+        struct stat file_stat;
+        if (stat(path, &file_stat) == 0) {
+        	int dir = 0;
+        	if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+        	const char* filename = getFileNameFromPath(path);
+
+        	if(!dir && regExpValid){
+        		printf("Regular Expression evaluat...!\n");
+        		int ret = regexec(&regex, path, 0, NULL, 0);
+        		if (ret == 0) {
+        			printf("Matched!\n");
+        		} else if (ret == REG_NOMATCH) {
+        		    printf("No match!\n");
+        		    continue;
+        		} else {
+        			char error_buffer[100];
+        			regerror(ret, &regex, error_buffer, sizeof(error_buffer));
+        			printf("Regex match failed: %s\n", error_buffer);
+        		    continue;
+        		}
+        	}
+
+        	json_t *file_info = json_object();
+        	json_object_set_new(file_info, "filename", json_string(filename));
+        	json_object_set_new(file_info, "path", json_string(path));
+        	json_object_set_new(file_info, "size", json_integer((long long)file_stat.st_size));
+        	json_object_set_new(file_info, "isdir", json_integer(dir));
+        	json_object_set_new(file_info, "mtime", json_integer((long)file_stat.st_mtime));
+        	json_object_set_new(file_info, "read", json_integer(read));
+        	json_object_set_new(file_info, "write", json_integer(write));
+//        	json_object_set_new(file_info, "relpath", json_string(get_relative_path(path, root_path)));
+
+//        	json_object_set_new(file_info, "ROOTPATH", "");
+//        	json_object_set_new(file_info, "execute", json_integer(execute));
+
+        	if(dir && (includeMode==0 || includeMode==1)){
+        		json_array_append_new(dir_info, file_info);
+        	}
+        	if(!dir && (includeMode==0 || includeMode==2)){
+        		json_array_append_new(dir_info, file_info);
+        	}
+//        	printf("file info:  %s\n", file_info );
+        	if (dir && includeSub) {
+        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeMode);
+            }
+
+        	if(defaultGetRows>-1){
+        		size_t array_length = json_array_size(dir_info);
+        		if(array_length >= defaultGetRows){
+        			printf("JSON Array Length: %zu\n", array_length);
+        			break;
+        		}
+        	}
+        }
+    }
+
+    closedir(dir);
+
+}
+
+void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) {
+
+    DIR *dir = opendir(dir_path);
+    if (!dir) {
+        fprintf(stderr, "Error opening directory: %s\n", dir_path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char path[PATH_MAX];
+        //char errorMsg[200];
+        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+        struct stat file_stat;
+        if (stat(path, &file_stat) == 0) {
+        	int dir = 0;
+        	if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+        	const char* filename = getFileNameFromPath(path);
+        	char crc32_hex_string[9];
+        	convertToHexString(crc32_hex_string, calculateCRC32(path));
+
+        	json_t *file_info = json_object();
+        	json_object_set_new(file_info, "NAME", json_string(filename));
+        	json_object_set_new(file_info, "ISDIR", json_integer(dir));
+        	json_object_set_new(file_info, "MDATE", json_integer((long)file_stat.st_mtime));
+        	json_object_set_new(file_info, "PATH", json_string(path));
+        	json_object_set_new(file_info, "RELPATH", json_string(get_relative_path(path, root_path)));
+        	json_object_set_new(file_info, "ROOTPATH", json_string(""));
+        	json_object_set_new(file_info, "READ", json_integer(read));
+        	json_object_set_new(file_info, "WRITE", json_integer(write));
+        	json_object_set_new(file_info, "SIZE", json_integer((long long)file_stat.st_size));
+        	json_object_set_new(file_info, "CHECKSUM", json_string(crc32_hex_string));
+        	json_object_set_new(file_info, "ERRMSG", json_string(path));
+//        	json_object_set_new(file_info, "execute", json_integer(execute));
+
+
+        	if(!dir){
+        		char *json_str = json_dumps(file_info, JSON_COMPACT);
+        		if (json_str != NULL) {
+        			fprintf(fw, "%s\n",json_str);
+        			free(json_str);
+        		}
+        	}
+
+        	if (dir) {
+        		scan_directory_info(root_path, path, fw);
+            }
+        }
+    }
+
+    closedir(dir);
+
+}
+
+
+
+const char* get_relative_path(const char* filePath, const char* rootPath ) {
+
+	// Find the position where 'rootPath' occurs in 'filePath'
+	const char* relativePath = strstr(filePath, rootPath);
+
+	if (relativePath != NULL) {
+		// If 'rootPath' is found in 'filePath', move 'relativePath' to the position after 'rootPath'
+		relativePath += strlen(rootPath);
+
+		return relativePath;
 	}
-	else {
-		sprintf(error_msg, "체크섬 오류.");
-		return false;
-	}	
+
+	return "/";
 }
 
 int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
@@ -157,10 +367,11 @@ int calculate_sha256(const char* file_path, const char* sha256sum, char* error_m
 	unsigned char digest[SHA256_DIGEST_LENGTH];
 	char sha256String[SHA256_DIGEST_LENGTH * 2 + 1];
 
+	printf("let's do checksum of %s", file_path);
 	FILE* file = fopen(file_path, "rb");
-	if (!file) {
-		strcpy(error_msg, "파일을 열 수 없습니다.");
-		return 0;
+	if (file == NULL) {
+		strcpy(error_msg, "can't open file.");
+		return false;
 	}
 	SHA256_CTX sha256Context;
 	SHA256_Init(&sha256Context);
@@ -174,15 +385,39 @@ int calculate_sha256(const char* file_path, const char* sha256sum, char* error_m
 		sprintf(&sha256String[i * 2], "%02X", (unsigned int)digest[i]);
 	}
 	fclose(file);
+	printf("file's checksum %s", sha256String);
 	if (strcmp((const char*)sha256String, sha256sum) == 0) {
 		return true;
 	}
 	else {
-		sprintf(error_msg, "체크섬 오류.");
+		sprintf(error_msg, "not matched file checksum");
 		return false;
 	}
 }
-#define CRC32_POLYNOMIAL 0xEDB88320
+
+void convertToHexString(char *output, unsigned long value) {
+     sprintf(output, "%08lx", value);
+}
+unsigned long calculateCRC32(const char *file_path) {
+    FILE *file = fopen(file_path, "rb");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file: %s\n", file_path);
+        return 0;
+    }
+
+    unsigned long crc = 0;
+    unsigned char buffer[1024];
+    size_t read_len;
+
+    while ((read_len = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        crc = crc32(crc, buffer, read_len);
+    }
+
+    fclose(file);
+
+    return crc;
+}
+/*#define CRC32_POLYNOMIAL 0xEDB88320
 unsigned int crc32_table[256];
 void generate_crc32_table() {
 	unsigned int crc, i, j;
@@ -243,7 +478,7 @@ unsigned short calculate_crc32(const char* file_path, const char* crcsum, char* 
 		return false;
 	}
 
-}
+}*/
 
 char * removeSlash(char* str) {
 	for (int i = strlen(str) - 1; i >= 0; i--)
@@ -389,6 +624,7 @@ unsigned char StringChange(char *pData, char *pSrc, char *pDest) {
 
 	return 1;
 }
+
 
 char* DetailTimeStamp(char *lpszDateTime) {
 	time_t localTime;

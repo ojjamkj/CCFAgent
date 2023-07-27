@@ -1,4 +1,4 @@
-package com.cfagent.api;
+package com.gtone.cf.rt.connect.impl.cagent;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -104,7 +104,7 @@ public class MTObject {
 		try {
 			m_OutBuffer.writeBytes(strVal);
 		} catch (Exception e) {
-			System.err.println(e.toString());
+			e.printStackTrace();
 			return false;
 		}
 

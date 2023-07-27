@@ -11,10 +11,10 @@
 #include		"MRConfig.h"
 #include		"BREXLog.h"
 
-#define     DEFAULT_PORT                35400
+#define     DEFAULT_PORT                30502
 #define     DEFAULT_ADMPORT             35401
 
-#define     DEFAULT_MAXPARMSIZE         5000000
+#define     DEFAULT_MAXPARMSIZE         1024000000
 #define     DEFAULT_BUFFERSIZE          4096
 #define     DEFAULT_RECEIVETIMEOUT      5000000
 #define     DEFAULT_SENDTIMEOUT         20

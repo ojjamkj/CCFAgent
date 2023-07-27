@@ -29,13 +29,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
+import java.util.zip.GZIPInputStream;
 
 import com.gtone.cf.daemon.cmd.BaseCommand;
 import com.gtone.cf.rt.connect.IConnector;
+import com.gtone.cf.rt.connect.impl.CAgentConnector;
 import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileManager;
 import com.gtone.cf.rt.file.FileModel;
@@ -45,45 +44,48 @@ import com.gtone.cf.util.ICFConstants;
 import jspeed.base.util.StringHelper;
 
 public class CCommandExample2 {
+	
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
+			HashMap inHash = new HashMap();
+			inHash.put("TARGET_IP", "172.16.15.15");
+			inHash.put("TARGET_PORT", "30502");
+//			inHash.put("TARGET_IP", "127.0.0.1");
+//			inHash.put("TARGET_PORT", "30502");
+			inHash.put("CONNECT_TYPE", "B");
+			inHash.put("MACHINE_TYPE", "S");
+			
 			CCommandExample2 obj = new CCommandExample2();
 			//1.CMD_AGENT_PING
-// 			obj.ping(); 			// 일부처리
+// 			obj.ping(inHash); 			// 일부처리
 			//2.CMD_CREATEFILE
-//			obj.createFile();		// 일부처리0
+//			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-			obj.viewFile(); 		// 일부처리
+//			obj.viewFile(inHash); 		// 일부처리
 			//4.CMD_BUILD
-//			obj.build();
+//			obj.build(inHash);
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-//			obj.searchOnlyFile();
+//			obj.searchOnlyFile(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
-//			obj.searchOnlyDir();
+//			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR
-//			obj.viewDir();
+//			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
-//			obj.scanToFile();
+			obj.scanToFile(inHash);
 
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
 	}
 	/// 여기서 부터 커맨드 하나씩 붙이면 됩니다.
-	public void ping() throws Exception
+	public void ping(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "35400");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-//		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "B");
-		inHash.put("MACHINE_TYPE", "S");
+		
 
 
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_AGENT_PING );
@@ -101,7 +103,7 @@ public class CCommandExample2 {
 //			System.out.println(resultCmd.getResultData());
 		}
 	}
-	public void createMultiFile(File rootFile) throws Exception
+	public void createMultiFile(HashMap inHash, File rootFile) throws Exception
 	{
 		String rootDir = "D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI";
 //		File rootFile = new File(rootDir);
@@ -115,23 +117,15 @@ public class CCommandExample2 {
 				String fromFile = f.getAbsolutePath();
 				String toFile = f.getAbsolutePath().replaceAll("\\\\", "/").replaceFirst(rootDir, "");
 				toFile = targetRoot + toFile;
-				createFile(fromFile, toFile);
+				createFile(fromFile, toFile, inHash);
 			}else {
-				createMultiFile(f);
+				createMultiFile(inHash, f);
 			}
 		}
 	}
-	public void createFile(String fromFile, String toFile) throws Exception
+	public void createFile(String fromFile, String toFile, HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-//		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
+				
 		
 //		String fromFile = "D:/temp/sinhyup/bucasu4084.c";
 //		String toFile = "/home/cf/tofile/bucasu4084.c";
@@ -162,17 +156,10 @@ public class CCommandExample2 {
 		
 	}
 
-	public void viewFile() throws Exception
+	public void viewFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 //		String toFile = "/home/cf/Dev/Src/Admin/BREXDiag.cpp";
-		String toFile = "/home/cf/Dev/Bin/LINUX/cfagent";
+		String toFile = "/home/cf/tofile/src/main/java/com/ccieurope/webservices/adinsertion/AdInsertionDataRequestHardErr.java";
 //		byte[] source = FileManager.viewFile(toFile);
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
 		inHash.put("TARGET_PATH", "/home/cf/Dev/Bin/LINUX"); 
@@ -192,22 +179,17 @@ public class CCommandExample2 {
 			FileModel fileModel = (FileModel)resultCmd.getResultData();
 			System.out.println(resultCmd.getResultData());
 			System.out.println(fileModel.getFileSource());
+			
+			FileManager.createFile(fileModel.getFileSource(), "D:/temp/AdInsertionDataRequestHardErr.java");
 		}
 	}
 	
-	public void build() throws Exception
+	public void build(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
-
-		inHash.put("BUILD_LOC", "D:/50_INSTALL/SampleBiz/dev/eachCall.bat"); //원격지 파일 경로
-		inHash.put("BUILD_FILE_TYPE", "0"); 
-		inHash.put("BUILD_PARAM", new String[] {"param1"});
-		inHash.put("LOG_TYPE", "CONSOLE");
+		inHash.put("BUILD_LOC", "/home/cf/test/changeflow.sh"); //원격지 파일 경로
+//		inHash.put("BUILD_FILE_TYPE", "0"); 
+		inHash.put("BUILD_PARAM", new String[] {"param1", "param2"});
+//		inHash.put("LOG_TYPE", "CONSOLE");
 		inHash.put("BUILD_OUTPUT", "");
 
 		BaseCommand cmd = new FileDeployCommand(  BaseCommand.CMD_BUILD );
@@ -225,14 +207,9 @@ public class CCommandExample2 {
 		
 	}
 	
-	public void deleteFile() throws Exception
+	public void deleteFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");  
-//		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
+		
 		
 		String toFile = "/home/cf/temp/a001";
 		inHash.put("TARGET_FILE", toFile); //원격지 파일 경로
@@ -253,22 +230,19 @@ public class CCommandExample2 {
 		}
 	}
 	
-	public void searchOnlyFile() throws Exception
+	public void searchOnlyFile(HashMap inHash) throws Exception
 	{
 		//NotFoundDirException | FileNotFoundException 에 대한 에러 처리 반드시 필요...원격에서 오류가 발생한 경우 반드시 서버로 해당 오류를 보내주어야함.
 		
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "172.16.15.15");
-		inHash.put("TARGET_PORT", "35400");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 		//배포시 파라미터 케이스2 (정규식 사용,)
-		inHash.put("TARGET_PATH", "/home/cf/temp/java"); //가져올 파일 수집 최상위 경로
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); //가져올 파일 수집 최상위 경로
 //		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
-		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
+//		inHash.put("TARGET_REGEXP", "[-*_*.*A-Za-z0-9]*.java"); //정규식 1번 예시 - Test로 시작하는 .html파일
 //		inHash.put("TARGET_REGEXP", ".*"); //정규식 2번 예시 - 하위 디렉토리 모든 파일 
 //		inHash.put("TARGET_REGEXP", "/compressionFilters/Compression($.*)?.class"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
+		inHash.put("TARGET_REGEXP", "(.)*\\.java"); //정규식 3번 예시 - Compression 클래스, inner 클래스 포함
+		inHash.put("INCLUDE_SUB", "Y"); 
+		
 		
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_FILE );
@@ -282,38 +256,18 @@ public class CCommandExample2 {
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
 			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
-			for(FileModel model : files)
+			for(FileModel fileModel : files)
 			{
-				System.out.println(model.getPath());
-				System.out.println(model.getSize());
-				System.out.println(model.getCanRead());
-				System.out.println(model.isCanWrite());
-				System.out.println(model.getFilename());
-				System.out.println(model.getFileSource());
-				System.out.println(model.isDirectory());
-				System.out.println(model.getLastModifiedDate());
-				System.out.println(model.getLength());
-				System.out.println(model.getParent());
-				System.out.println(model.getRelPath());
-				System.out.println(model.getRootPath());
-				System.out.println(model.getType());
+				FileManager.createFile(fileModel.getFileSource(), fileModel.getPath().replaceAll("/home/cf/tofile","D:/temp/ttt"));
 			}	
 		}
 	}
 	
 	
-	public void searchOnlyDir() throws Exception
+	public void searchOnlyDir(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
 		
-		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
-		
-		
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_DIR );
 		cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
@@ -335,26 +289,13 @@ public class CCommandExample2 {
 	}
 	
 	
-	public void viewDir() throws Exception
+	public void viewDir(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
-		ArrayList includeFilter = new ArrayList();
-		includeFilter.add("/*.java");
-		ArrayList ignoreFilter = new ArrayList();
-		ignoreFilter.add("**.bak");
-		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_SUB_DIR", "Y"); //하위 디렉토리 포함 여부
-		inHash.put("TARGET_REGEXP", ""); //검색 정규식, 옵션
-		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
-		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션
-		inHash.put("START_ROW", "0"); //옵션
-		inHash.put("DEFAULT_GET_ROWS", "500"); //옵션
+//		inHash.put("TARGET_REGEXP", "(.)*(.)*"); //검색 정규식, 옵션
+		inHash.put("TARGET_REGEXP", "(.)*\\.png"); //검색 정규식, 옵션
+		inHash.put("DEFAULT_GET_ROWS", "10"); //옵션
 		
 		
 		BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_VIEWDIR );
@@ -370,38 +311,32 @@ public class CCommandExample2 {
 			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
 			for(FileModel model : files)
 			{
-				System.out.println(model.getPath());
-				System.out.println(model.getSize());
-				System.out.println(model.getCanRead());
-				System.out.println(model.isCanWrite());
-				System.out.println(model.getFilename());
-				System.out.println(model.getFileSource());
-				System.out.println(model.isDirectory());
-				System.out.println(model.getLastModifiedDate());
-				System.out.println(model.getLength());
-				System.out.println(model.getParent());
-				System.out.println(model.getRelPath());
-				System.out.println(model.getRootPath());
-				System.out.println(model.getType());
-				System.out.println("");
+//				System.out.println(model.getPath());
+//				System.out.println(model.getSize());
+//				System.out.println(model.getCanRead());
+//				System.out.println(model.isCanWrite());
+//				System.out.println(model.getFilename());
+//				System.out.println(model.getFileSource());
+//				System.out.println(model.isDirectory());
+//				System.out.println(model.getLastModifiedDate());
+//				System.out.println(model.getLength());
+//				System.out.println(model.getParent());
+//				System.out.println(model.getRelPath());
+//				System.out.println(model.getRootPath());
+//				System.out.println(model.getType());
+//				System.out.println("");
 			}	
 		}
 	}
 	
-	public void scanToFile() throws Exception
+	public void scanToFile(HashMap inHash) throws Exception
 	{
-		HashMap inHash = new HashMap();
-		inHash.put("TARGET_IP", "127.0.0.1");
-		inHash.put("TARGET_PORT", "30502");
-		inHash.put("CONNECT_TYPE", "A");
-		inHash.put("MACHINE_TYPE", "S");
-		
 		ArrayList includeFilter = new ArrayList();
 		includeFilter.add("/*.java");
 		ArrayList ignoreFilter = new ArrayList();
 		ignoreFilter.add("**.bak");
 		
-		inHash.put("TARGET_PATH", "D:/50_INSTALL/SampleBiz/real"); 
+		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
 		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
 		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
 		inHash.put("INCLUDE_CHECKSUM", "Y"); //체크썸 포함 여부
@@ -421,10 +356,10 @@ public class CCommandExample2 {
 			FileModel model = (FileModel)resultCmd.getResultData();
 			
 			byte[] scanFileSource = model.getFileSource();
-			String savedFile = "d:/Temp/scanResultFile.txt";
+			String savedFile = "d:/Temp/scanResultFile.gz";
 			String unzipFile = "d:/Temp/unzipScanResultFile.txt";
-			FileManager.createFile(scanFileSource, "d:/Temp/scanResultFile.txt");
-			unzip(savedFile, new File(unzipFile));
+			FileManager.createFile(scanFileSource, savedFile);
+			unzipGzFile(savedFile, unzipFile);
 			//아래는 리턴값 샘플, 뉴라인키가 각 데이터의 구분자, 파일은 utf-8로 생성되어야함.
 			/** 
 			 * 
@@ -482,7 +417,7 @@ public class CCommandExample2 {
 		{
 //			conn = makeConnection(globalMap, param, connector,runCmd.isMultiple()  );
 //			BaseCommand result = connector.connect(runCmd);
-			CAgentConnector2 ca2 = new CAgentConnector2();
+			CAgentConnector ca2 = new CAgentConnector();
 			BaseCommand result =ca2.remoteCmdRun(globalMap, param, runCmd);
 			return result;
 		}
@@ -503,39 +438,52 @@ public class CCommandExample2 {
 
 	} 
 	
-	protected void unzip(String zipFile, File unzipFileName) {
-
-        FileInputStream fileInputStream = null;	
-        FileOutputStream fileOutputStream = null;
-        ZipInputStream zipInputStream = null;
-        try {
-            fileInputStream = new FileInputStream(zipFile);
-            zipInputStream = new ZipInputStream(fileInputStream);
-            ZipEntry zipEntry = null;
-            
-            byte[] buf = new byte[1024];
-            int length = 0;
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                fileOutputStream = new FileOutputStream(unzipFileName);                
-                
-    			while ((length = zipInputStream.read(buf)) != -1) {
-                    fileOutputStream.write(buf, 0, length);
-                }
-
-                zipInputStream.closeEntry();
-                fileOutputStream.flush();
-                fileOutputStream.close();
-            }
-            zipInputStream.close();
-        } catch (IOException e) {
-            // Exception Handling
-        } finally {
-            if(zipInputStream != null) try {zipInputStream.closeEntry(); }catch(Exception e) {}
-            if(fileOutputStream != null) try {fileOutputStream.flush(); }catch(Exception e) {}
-            if(fileOutputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
-            if(zipInputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
-        }
-    }
+	public static void unzipGzFile(String gzFilePath, String outputFilePath) throws IOException {
+	    try (FileInputStream fis = new FileInputStream(gzFilePath);
+	         GZIPInputStream gzipInputStream = new GZIPInputStream(fis);
+	         FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+	        
+	        byte[] buffer = new byte[1024];
+	        int len;
+	        while ((len = gzipInputStream.read(buffer)) > 0) {
+	            fos.write(buffer, 0, len);
+	        }
+	    }
+	}
+	
+//	protected void unzip(String zipFile, File unzipFileName) {
+//
+//        FileInputStream fileInputStream = null;	
+//        FileOutputStream fileOutputStream = null;
+//        ZipInputStream zipInputStream = null;
+//        try {
+//            fileInputStream = new FileInputStream(zipFile);
+//            zipInputStream = new ZipInputStream(fileInputStream);
+//            ZipEntry zipEntry = null;
+//            
+//            byte[] buf = new byte[1024];
+//            int length = 0;
+//            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+//                fileOutputStream = new FileOutputStream(unzipFileName);                
+//                
+//    			while ((length = zipInputStream.read(buf)) != -1) {
+//                    fileOutputStream.write(buf, 0, length);
+//                }
+//
+//                zipInputStream.closeEntry();
+//                fileOutputStream.flush();
+//                fileOutputStream.close();
+//            }
+//            zipInputStream.close();
+//        } catch (IOException e) {
+//            // Exception Handling
+//        } finally {
+//            if(zipInputStream != null) try {zipInputStream.closeEntry(); }catch(Exception e) {}
+//            if(fileOutputStream != null) try {fileOutputStream.flush(); }catch(Exception e) {}
+//            if(fileOutputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+//            if(zipInputStream != null) try {zipInputStream.close(); }catch(Exception e) {}
+//        }
+//    }
 
 
 
