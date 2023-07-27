@@ -60,14 +60,13 @@ static char Base64Pad = '=';
 
 #define CHECK_SUM_BUFFER_SIZE 1024
 
-//int calculate_md5(const char* filename, const char* md5sum, char* error_msg);
 int calculate_sha256(const char* filename, const char* sha256sum, char* error_msg);
-unsigned short calculate_crc32(const char* filename, const char* crcsum, char* error_msg);
+void convertToHexString(char *output, unsigned long value);
+unsigned long calculateCRC32(const char *file_path);
 int createFile(char* filename, const unsigned char* data, size_t length, char *msg);
 json_t* get_file_info(const char* path, char* msg);
 void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t targetRegExp, int regExpValid, int includeMode);
 void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw);
-//void cleanup(FILE *fw, gzFile *zipOut, FILE *in, const char *scanTempFile, const char *zipTempFile);
 const char* get_relative_path(const char* filePath, const char* rootPath );
 char * removeSlash(char* str);
 #endif    //   __INC_MTUTIL

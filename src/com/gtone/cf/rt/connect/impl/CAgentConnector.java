@@ -1,12 +1,11 @@
-package cmd;
+package com.gtone.cf.rt.connect.impl;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import com.cfagent.api.CFAPI5J;
 import com.gtone.cf.daemon.cmd.BaseCommand;
-import com.gtone.cf.rt.connect.impl.AbstractConnector;
+import com.gtone.cf.rt.connect.impl.cagent.CFAPI5J;
 import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.ICFConstants;
@@ -15,7 +14,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
  
-public class CAgentConnector2 extends AbstractConnector {
+public class CAgentConnector extends AbstractConnector {
 	SimpleDateFormat sdf = new SimpleDateFormat(ICFConstants.DATE_PATTERN);
 	
 	public BaseCommand CMD_AGENT_PING(CFAPI5J conn, HashMap param, BaseCommand cmd) {
@@ -362,6 +361,7 @@ public class CAgentConnector2 extends AbstractConnector {
 				if(new Boolean(result).booleanValue()) {
 					FileModel fileModel = new FileModel();
 					fileModel.setFileSource(conn.ReadFileByte()); 
+					
 					resultCmd.setResult(true, null, fileModel);
 					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
 				}else {

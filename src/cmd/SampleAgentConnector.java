@@ -28,7 +28,7 @@ import com.gtone.cf.util.ICFConstants;
  *
  */
 
-public class CAgentConnector extends AbstractConnector {
+public class SampleAgentConnector extends AbstractConnector {
 
 	  
 	

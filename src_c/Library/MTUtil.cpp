@@ -307,6 +307,8 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
         	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
 //        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
         	const char* filename = getFileNameFromPath(path);
+        	char crc32_hex_string[9];
+        	convertToHexString(crc32_hex_string, calculateCRC32(path));
 
         	json_t *file_info = json_object();
         	json_object_set_new(file_info, "NAME", json_string(filename));
@@ -318,15 +320,15 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
         	json_object_set_new(file_info, "READ", json_integer(read));
         	json_object_set_new(file_info, "WRITE", json_integer(write));
         	json_object_set_new(file_info, "SIZE", json_integer((long long)file_stat.st_size));
-        	json_object_set_new(file_info, "CHECKSUM", json_string(path));
+        	json_object_set_new(file_info, "CHECKSUM", json_string(crc32_hex_string));
         	json_object_set_new(file_info, "ERRMSG", json_string(path));
 //        	json_object_set_new(file_info, "execute", json_integer(execute));
 
 
         	if(!dir){
-        		char *json_str = json_dumps(file_info, JSON_INDENT(2));
+        		char *json_str = json_dumps(file_info, JSON_COMPACT);
         		if (json_str != NULL) {
-        			fprintf(fw, json_str);
+        			fprintf(fw, "%s\n",json_str);
         			free(json_str);
         		}
         	}
@@ -341,50 +343,7 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
 
 }
 
-//void cleanup(FILE *fw, gzFile *zipOut, FILE *in, const char *scanTempFile, const char *zipTempFile)
-//{
-//    if (fw != NULL)
-//        fclose(fw);
-//    if (zipOut != NULL)
-//        gzclose(zipOut);
-//    if (in != NULL)
-//        fclose(in);
-//    if (scanTempFile != NULL)
-//        unlink(scanTempFile);
-//    if (zipTempFile != NULL)
-//        unlink(zipTempFile);
-//}
-/*int calculate_md5(const char* file_path, const char* md5sumsrc, char* error_msg) {
-	FILE* file = fopen(file_path, "rb");
-	unsigned char digest[MD5_DIGEST_LENGTH];
-	unsigned char buffer[CHECK_SUM_BUFFER_SIZE];
-	if (!file) {
-		strcpy(error_msg, "파일을 열 수 없습니다.");
-		return 0;
-	}
-	MD5_CTX md5_ctx;
-	MD5_Init(&md5_ctx);
-	size_t bytes;
-	while ((bytes = fread(buffer, 1, CHECK_SUM_BUFFER_SIZE, file)) != 0) {
-		MD5_Update(&md5_ctx, buffer, bytes);
-	}
-	MD5_Final(digest, &md5_ctx);
 
-	char md5String[MD5_DIGEST_LENGTH * 2 + 1];
-	memset(md5String, 0xff, MD5_DIGEST_LENGTH * 2 + 1);
-	for (int i = 0; i < MD5_DIGEST_LENGTH; i++) {
-		sprintf(&md5String[i * 2], "%02X", (unsigned int)digest[i]);
-	}
-	fclose(file);
-
-	if (strcmp((const char*)md5String, md5sumsrc) == 0) {
-		return true;
-	}
-	else {
-		sprintf(error_msg, "체크섬 오류.");
-		return false;
-	}	
-}*/
 
 const char* get_relative_path(const char* filePath, const char* rootPath ) {
 
@@ -435,7 +394,30 @@ int calculate_sha256(const char* file_path, const char* sha256sum, char* error_m
 		return false;
 	}
 }
-#define CRC32_POLYNOMIAL 0xEDB88320
+
+void convertToHexString(char *output, unsigned long value) {
+     sprintf(output, "%08lx", value);
+}
+unsigned long calculateCRC32(const char *file_path) {
+    FILE *file = fopen(file_path, "rb");
+    if (file == NULL) {
+        fprintf(stderr, "Error opening file: %s\n", file_path);
+        return 0;
+    }
+
+    unsigned long crc = 0;
+    unsigned char buffer[1024];
+    size_t read_len;
+
+    while ((read_len = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+        crc = crc32(crc, buffer, read_len);
+    }
+
+    fclose(file);
+
+    return crc;
+}
+/*#define CRC32_POLYNOMIAL 0xEDB88320
 unsigned int crc32_table[256];
 void generate_crc32_table() {
 	unsigned int crc, i, j;
@@ -496,7 +478,7 @@ unsigned short calculate_crc32(const char* file_path, const char* crcsum, char* 
 		return false;
 	}
 
-}
+}*/
 
 char * removeSlash(char* str) {
 	for (int i = strlen(str) - 1; i >= 0; i--)

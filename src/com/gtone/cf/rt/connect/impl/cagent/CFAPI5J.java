@@ -1,21 +1,15 @@
-package com.cfagent.api;
+package com.gtone.cf.rt.connect.impl.cagent;
 
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Properties;
-import java.util.Vector;
 
 public class CFAPI5J {
 	public  static String   brexPrimary = "172.16.15.15"; 
@@ -48,7 +42,7 @@ public class CFAPI5J {
 	public static int socketCloseCount = 0;
 
 	public static String pEnv;
-	public static int timeout = 0;
+	public static int timeout = 5000;
 	public static int readTimeout = 5000;
 	public static int endFlag = -1;
 	public static long engineCheckTime=-1;
@@ -62,18 +56,18 @@ public class CFAPI5J {
 	public static final  boolean PORT=false;
 	public static boolean failOverServer=SERVER;
 
-	private static String resource = "/rapi4j.properties";
+//	private static String resource = "/rapi4j.properties";
 
 	private boolean isConnectTimeOut = false;
 	private long    sTmie, eTime;
-	public void log_write(String msg) {
-		System.out.println(msg);
-	}
+//	public void log_write(String msg) {
+//		System.out.println(msg);
+//	}
 
-	public long currentTimeMillis() {
-		return System.currentTimeMillis();
-
-	}
+//	public long currentTimeMillis() {
+//		return System.currentTimeMillis();
+//
+//	}
 
 	public byte getPriority() {
 		return this.priority;
@@ -135,11 +129,11 @@ public class CFAPI5J {
 		this.inByteStream = new byte[maxInOutBufferSize];
 	}
 
-	public void initlog(boolean isLog, String msg) {
-		if (isLog) {
-			System.out.print(msg);
-		}
-	}
+//	public void initlog(boolean isLog, String msg) {
+//		if (isLog) {
+//			System.out.print(msg);
+//		}
+//	}
 
 	public static synchronized String DGetEnv(String name) {
 		String rValue = "";
@@ -152,78 +146,78 @@ public class CFAPI5J {
 		}
 		return rValue;
 	}
-  public static synchronized String GetEnvString(String name, String defaultVale ){
-  	String msg="BREX INIT -> System.getProperty Read";
-		String pEnv2 = DGetEnv(name);
-		if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
-		}else{
-			pEnv2=defaultVale;
-		}
-		if (isDebug) {
-			System.out.println(msg+":["+name+"]=>[" + pEnv2.trim() + "]");
-		}
-		return pEnv2;
-  }
-  public static synchronized int GetEnvInt(String name, int defaultVale){
-  	String msg="BREX INIT -> System.getProperty Read";
-		String pEnv2 = DGetEnv(name);
-		int val=0;
-		if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
-				try{
-					val= Integer.parseInt(pEnv2.trim());
-				}catch (Exception e) {
-					val=defaultVale;
-				}
- 
-		}else{
-			val= defaultVale;
-		}
-		if (isDebug) {
-			System.out.println(msg+":["+name+"]=>[" + val+ "]");
-		}
-		return val;
-  }
-  public static synchronized String GetPropertiesString(Properties p,String name, String defaultVale ){
-  	String msg="BREX INIT -> Properties Read";
-  	String pEnv2="";
-			if (p.containsKey( name )) {
-				pEnv2 = p.getProperty(name );
-				if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
-				}else{
-					pEnv2=defaultVale;
-				}
-			}else{
-				pEnv2=defaultVale;
-			}
-		if (isDebug) {
-			System.out.println(msg+":["+name+"]=>[" + pEnv2 + "]");
-		}
-		return pEnv2;
-  }
-
-  public static synchronized int GetPropertiesInt(Properties p,String name, int defaultVale){
-  	String msg="BREX INIT -> Properties Read";
-  	String pEnv2="";
-		int val=0;
-			if (p.containsKey( name )) {
-				pEnv2 = p.getProperty(name );
-				if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
-					try {
-						val = Integer.parseInt(pEnv2.trim());
-					} catch (Exception e) {
-						val=defaultVale;
-					}
-				}else{
-					val=defaultVale;
-				}
-			}else{
-				val=defaultVale;
-			}
-		if (isDebug) {
-			System.out.println(msg+":["+name+"]=>[" + val+ "]");
-		}
-		return val;
-  }
+//  public static synchronized String GetEnvString(String name, String defaultVale ){
+//  	String msg="BREX INIT -> System.getProperty Read";
+//		String pEnv2 = DGetEnv(name);
+//		if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
+//		}else{
+//			pEnv2=defaultVale;
+//		}
+//		if (isDebug) {
+//			System.out.println(msg+":["+name+"]=>[" + pEnv2.trim() + "]");
+//		}
+//		return pEnv2;
+//  }
+//  public static synchronized int GetEnvInt(String name, int defaultVale){
+//  	String msg="BREX INIT -> System.getProperty Read";
+//		String pEnv2 = DGetEnv(name);
+//		int val=0;
+//		if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
+//				try{
+//					val= Integer.parseInt(pEnv2.trim());
+//				}catch (Exception e) {
+//					val=defaultVale;
+//				}
+// 
+//		}else{
+//			val= defaultVale;
+//		}
+//		if (isDebug) {
+//			System.out.println(msg+":["+name+"]=>[" + val+ "]");
+//		}
+//		return val;
+//  }
+//  public static synchronized String GetPropertiesString(Properties p,String name, String defaultVale ){
+//  	String msg="BREX INIT -> Properties Read";
+//  	String pEnv2="";
+//			if (p.containsKey( name )) {
+//				pEnv2 = p.getProperty(name );
+//				if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
+//				}else{
+//					pEnv2=defaultVale;
+//				}
+//			}else{
+//				pEnv2=defaultVale;
+//			}
+//		if (isDebug) {
+//			System.out.println(msg+":["+name+"]=>[" + pEnv2 + "]");
+//		}
+//		return pEnv2;
+//  }
+//
+//  public static synchronized int GetPropertiesInt(Properties p,String name, int defaultVale){
+//  	String msg="BREX INIT -> Properties Read";
+//  	String pEnv2="";
+//		int val=0;
+//			if (p.containsKey( name )) {
+//				pEnv2 = p.getProperty(name );
+//				if ((pEnv2 != null) && (!pEnv2.trim().equals("NULL")) && (!pEnv2.trim().equals(""))) {
+//					try {
+//						val = Integer.parseInt(pEnv2.trim());
+//					} catch (Exception e) {
+//						val=defaultVale;
+//					}
+//				}else{
+//					val=defaultVale;
+//				}
+//			}else{
+//				val=defaultVale;
+//			}
+//		if (isDebug) {
+//			System.out.println(msg+":["+name+"]=>[" + val+ "]");
+//		}
+//		return val;
+//  }
   
   
 
@@ -261,14 +255,14 @@ public class CFAPI5J {
 		return 0L;
 	}
 
-	public void AddItemCount(int cnt) {
+	public void AddItemCount(int cnt) throws Exception{
 		this.OutBuffer.WriteInt(cnt);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t AddItemCount(" + cnt + ")");
 		}
 	}
 
-	public void AddString(String dblVal) {
+	public void AddString(String dblVal) throws Exception{
 		this.OutBuffer.WriteInt(1);
 		this.OutBuffer.WriteString(dblVal);
 		if (isDebug) {
@@ -276,7 +270,7 @@ public class CFAPI5J {
 		}
 	}
 
-	public void AddStringArray(String dblVal[]) {
+	public void AddStringArray(String dblVal[]) throws Exception{
 		if (dblVal == null || dblVal.length <= 0) {
 			this.OutBuffer.WriteInt(1);
 			this.OutBuffer.WriteString("");
@@ -288,26 +282,26 @@ public class CFAPI5J {
 		}
 	}
  
-	public void WriteString(String dblVal) {
+	public void WriteString(String dblVal) throws Exception{
 		this.OutBuffer.WriteString(dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t WriteString(" + dblVal + ")");
 		}
 	}
-	public void WriteByteFile(byte byteVal[]) {
+	public void WriteByteFile(byte byteVal[]) throws Exception{
 		this.OutBuffer.WriteByteFile(byteVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t WriteString(" + byteVal + ")");
 		}
 	}
-	public void WriteByte(byte dblVal[]) {
+	public void WriteByte(byte dblVal[]) throws Exception{
 		this.OutBuffer.WriteByte(dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t WriteString(" + dblVal + ")");
 		}
 	}
 
-	public void AddItemString(String dblVal) {
+	public void AddItemString(String dblVal) throws Exception{
 		this.OutBuffer.WriteString(dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t AddItemString(" + dblVal + ")");
@@ -315,7 +309,7 @@ public class CFAPI5J {
 	}
  
 
-	public void AddInt(int dblVal) {
+	public void AddInt(int dblVal) throws Exception{
 		this.OutBuffer.WriteInt(1);
 		this.OutBuffer.WriteInt(dblVal);
 		if (isDebug) {
@@ -323,7 +317,7 @@ public class CFAPI5J {
 		}
 	}
 
-	public void AddIntArray(int dblVal[]) {
+	public void AddIntArray(int dblVal[]) throws Exception{
 		if (dblVal == null || dblVal.length <= 0) {
 			this.OutBuffer.WriteInt(1);
 			this.OutBuffer.WriteInt(0);
@@ -335,28 +329,28 @@ public class CFAPI5J {
 		}
 	}
 
-	public void WriteInt(int dblVal) {
+	public void WriteInt(int dblVal) throws Exception{
 		this.OutBuffer.WriteInt(dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t WriteInt(" + dblVal + ")");
 		}
 	}
 
-	public void WriteFraction(double dblVal) {
+	public void WriteFraction(double dblVal) throws Exception{
 		this.OutBuffer.WriteString("" + dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t WriteInt(" + dblVal + ")");
 		}
 	}
 
-	public void AddItemInt(int dblVal) {
+	public void AddItemInt(int dblVal) throws Exception{
 		this.OutBuffer.WriteInt(dblVal);
 		if (isDebug) {
 			this.debugMessage = (this.debugMessage + "\t AddItemInt(" + dblVal + ")");
 		}
 	}
 
-	public void AddItemFraction(double dblVal) {
+	public void AddItemFraction(double dblVal) throws Exception{
 		double dblVal2;
 		try {
 			dblVal2 = dblVal;
@@ -369,7 +363,7 @@ public class CFAPI5J {
 		}
 	}
 
-	public void AddFraction(double dblVal) {
+	public void AddFraction(double dblVal) throws Exception{
 		double dblVal2;
 		try {
 			dblVal2 = dblVal;
@@ -383,7 +377,7 @@ public class CFAPI5J {
 		}
 	}
 
-	public void AddFractionArray(double dblVal[]) {
+	public void AddFractionArray(double dblVal[]) throws Exception{
 		double dblVal2;
 
 		if (dblVal == null || dblVal.length <= 0) {
@@ -402,10 +396,10 @@ public class CFAPI5J {
 		}
 	}
 
-	public String ReadString() {
+	public String ReadString() throws Exception{
 		return getInBuffer().ReadString();
 	}
-	public String ReadLongString() {
+	public String ReadLongString() throws Exception{
 		return getInBuffer().ReadLongString();
 	}
 //	public String ReadFile(String path, String name) {
@@ -417,15 +411,15 @@ public class CFAPI5J {
 	public byte[] ReadFileByte(int size) throws Exception {
 		return getInBuffer().ReadFileByte(size);
 	}
-	public String ReadString(String charsetName) {
+	public String ReadString(String charsetName) throws Exception{
 		return getInBuffer().ReadString(charsetName);
 	}
 
-	public double ReadFraction() {
+	public double ReadFraction() throws Exception{
 		return getInBuffer().ReadDouble();
 	}
 
-	public double ReadDouble() {
+	public double ReadDouble() throws Exception{
 		return getInBuffer().ReadDouble();
 	}
 
@@ -481,7 +475,7 @@ public class CFAPI5J {
 		return this.errorMessage;
 	}
 
-	public void Clear() {
+	public void Clear() throws Exception {
 		if (this.OutBuffer != null) {
 			this.OutBuffer.Clear();
 		}
@@ -489,7 +483,7 @@ public class CFAPI5J {
 		this.OutBuffer.WriteInt(0);
 	}
 
-	public void Initialize(String ruleId, int cnt, byte[] ItemTypes, int[] ItemCd) {
+	public void Initialize(String ruleId, int cnt, byte[] ItemTypes, int[] ItemCd) throws Exception{
 		this.m_ruleId = ruleId;
 		this.m_itemCnt = cnt;
 		if (this.OutBuffer != null) {
@@ -508,7 +502,7 @@ public class CFAPI5J {
 		}
 	}
 
-	public void Initialize(String ruleId) {
+	public void Initialize(String ruleId) throws Exception{
 		this.m_ruleId = ruleId;
 		this.OutBuffer = new MTObjectOut( maxParamSize);
 		this.OutBuffer.WriteString(this.m_ruleId);
@@ -533,7 +527,7 @@ public class CFAPI5J {
 		}
 		return 31L;
 	}
-	private long BuildSendHeader(MTObjectOut ObjHeader, int sendSize, byte paramMode) {
+	private long BuildSendHeader(MTObjectOut ObjHeader, int sendSize, byte paramMode) throws Exception{
 		// if (apiVersion.trim().equals("5.0"))
 
 		String str=""+sendSize;
@@ -550,7 +544,7 @@ public class CFAPI5J {
 		return 0L;
 	}
 
-	private long BuildSendHeaderFull(MTObjectOut ObjHeader, int sendSize, byte paramMode, int param_qid) {
+	private long BuildSendHeaderFull(MTObjectOut ObjHeader, int sendSize, byte paramMode, int param_qid) throws Exception{
 		
 		String str=""+sendSize;
 	    byte[] bytes = new byte[30];
@@ -601,10 +595,10 @@ public class CFAPI5J {
 				this.inByteStream = null;
 				this.inByteStream = new byte[maxInOutBufferSize];
 			}
-			start = currentTimeMillis();
+//			start = currentTimeMillis();
 			if (readByteStream(_clientSocket, 50) != 0)
 				return -1;
-			end1 = currentTimeMillis();
+//			end1 = currentTimeMillis();
 			InHeader = new MTObjectIn(this.inByteStream);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -632,7 +626,7 @@ public class CFAPI5J {
 
 	private synchronized int Calling(int svrIndex, int portIndex, boolean errmsg) {
 		try {
-System.out.println("Calling:"+brexPrimary+":"+brexPort);			
+//System.out.println("Calling:"+brexPrimary+":"+brexPort);			
 			this.clientSock = OpenSocket();
 			if( clientSock!=null)return 0;
 			else return -1;
@@ -654,7 +648,6 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 		try{
 	  		MBRS_Call_Full(2); 
 		}catch (Exception e) {
-			e.printStackTrace();
 			throw e;  
 		}
 	}
@@ -829,49 +822,49 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 		}
 	}
 	
-	public synchronized Socket OpenSocketABL(String Ip, int port) throws Exception {
-		long start, end;
-		socketOpenCount += 1;
-		Socket clientSocktemp = null;
-		System.out.println("["+Ip+"]+["+port+"]");
-		 try{
-				if (isConnectTimeOut) {
-					SocketAddress socketAddress = new InetSocketAddress(Ip, port);
-					if (null != socketAddress) {
-						clientSocktemp = new Socket( );
-						if (null != clientSocktemp) {
-							clientSocktemp.setSoLinger(true, 0);
-							clientSocktemp.connect(socketAddress, timeout);
-							clientSocktemp.setSoTimeout(readTimeout);
-						}else{
-							clientSocktemp=null;
-						}
-					}
-					
-				} else {
-					clientSocktemp = new Socket(Ip, port);
-					if (null != clientSocktemp) {
-						clientSocktemp.setSoLinger(true, 0);
-						clientSocktemp.setSoTimeout(readTimeout);
-					}else{
-						clientSocktemp=null;
-					}
-				}
-
-				socketOpenCount += 1;
-		 }catch (Exception e) {
-				clientSocktemp=null;
-				System.out.println("IP["+Ip+":"+port+"]"+e.getMessage());
-//				e.printStackTrace();
-			// TODO: handle exception
-		}finally{
-			if( clientSocktemp!=null){
-				ins = clientSocktemp.getInputStream();
-			}
-			return clientSocktemp;
-		}
-		 
-	}
+//	public synchronized Socket OpenSocketABL(String Ip, int port) throws Exception {
+//		long start, end;
+//		socketOpenCount += 1;
+//		Socket clientSocktemp = null;
+//		System.out.println("["+Ip+"]+["+port+"]");
+//		 try{
+//				if (isConnectTimeOut) {
+//					SocketAddress socketAddress = new InetSocketAddress(Ip, port);
+//					if (null != socketAddress) {
+//						clientSocktemp = new Socket( );
+//						if (null != clientSocktemp) {
+//							clientSocktemp.setSoLinger(true, 0);
+//							clientSocktemp.connect(socketAddress, timeout);
+//							clientSocktemp.setSoTimeout(readTimeout);
+//						}else{
+//							clientSocktemp=null;
+//						}
+//					}
+//					
+//				} else {
+//					clientSocktemp = new Socket(Ip, port);
+//					if (null != clientSocktemp) {
+//						clientSocktemp.setSoLinger(true, 0);
+//						clientSocktemp.setSoTimeout(readTimeout);
+//					}else{
+//						clientSocktemp=null;
+//					}
+//				}
+//
+//				socketOpenCount += 1;
+//		 }catch (Exception e) {
+//				clientSocktemp=null;
+//				System.out.println("IP["+Ip+":"+port+"]"+e.getMessage());
+////				e.printStackTrace();
+//			// TODO: handle exception
+//		}finally{
+//			if( clientSocktemp!=null){
+//				ins = clientSocktemp.getInputStream();
+//			}
+//			return clientSocktemp;
+//		}
+//		 
+//	}
 	 
 	public synchronized boolean MBRS_Call_Socket(int parmMode) throws Exception {
 		int rc = 0;
@@ -936,9 +929,9 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 				byte[] newInByteStream = new byte[rcvSize];
 				this.inByteStream = newInByteStream;
 			}
-			start = currentTimeMillis();
+//			start = currentTimeMillis();
 			int leng = ins.read(this.inByteStream, 0, rcvSize);
-			end1 = currentTimeMillis();
+//			end1 = currentTimeMillis();
 			if (leng < 0) {
 				this.errorCode = -1;
 				this.errorMessage = ("Socket Read(" + leng + ") Error(BuildResult) rcvSize > " + rcvSize);
@@ -993,7 +986,7 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 			this.errorCode = this.InBuffer.ReadInt();
 			this.errorMessage = this.InBuffer.ReadString();
 
-			System.out.println("rc:" + rc + ":errorMessage::" + this.errorMessage);
+//			System.out.println("rc:" + rc + ":errorMessage::" + this.errorMessage);
 			return this.errorCode;
 		}
 		return 0L;
@@ -1049,7 +1042,7 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 			if (OutHeader != null) {
 				OutHeader = null;
 			}
-			System.out.println(this.errorMessage);
+//			System.out.println(this.errorMessage);
 			throw new Exception(this.errorMessage);
 		}
 		rcvSize = (int) BuildResult(this.clientSock2, rcvSize);
@@ -1122,45 +1115,45 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 		return rValue;
 	}
    
-	public static void main(String args[]){
-		try{
-			if( args.length>0){
-				 InputStream is =null;
-				 CFAPI5J rj = new CFAPI5J();
-			   is = rj.getClass().getResourceAsStream("/version.txt");
-			   if( args.length>=2){
-						if( args[0].trim().toLowerCase().equals("-v") && args[1].trim().toLowerCase().equals("-all") ){
-						   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-				        StringBuilder out = new StringBuilder();
-				        String line;
-				        while ((line = reader.readLine()) != null) {
-			            out.append(line);
-			            out.append("\n");
-				        }
-				        System.out.println(out.toString());   //Prints the string content read from input stream
-				        reader.close();
-						}else 	if( args[0].trim().toLowerCase().equals("-v") ){
-						   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-				        StringBuilder out = new StringBuilder();
-				        String line= reader.readLine();
-				        line= reader.readLine();
-		            out.append(line);
-				        System.out.println(out.toString().substring(0,11));   //Prints the string content read from input stream
-				        reader.close();
-						}
-					}else{
-					   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-			        StringBuilder out = new StringBuilder();
-			        String line= reader.readLine();
-			        line= reader.readLine();
-	           out.append(line);
-			        System.out.println(out.toString().substring(0,11));   //Prints the string content read from input stream
-			        reader.close();;
-					}			
-			}
-		}catch (Exception e) {
-			e.printStackTrace();
-			// TODO: handle exception
-		}
-	}
+//	public static void main(String args[]){
+//		try{
+//			if( args.length>0){
+//				 InputStream is =null;
+//				 CFAPI5J rj = new CFAPI5J();
+//			   is = rj.getClass().getResourceAsStream("/version.txt");
+//			   if( args.length>=2){
+//						if( args[0].trim().toLowerCase().equals("-v") && args[1].trim().toLowerCase().equals("-all") ){
+//						   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//				        StringBuilder out = new StringBuilder();
+//				        String line;
+//				        while ((line = reader.readLine()) != null) {
+//			            out.append(line);
+//			            out.append("\n");
+//				        }
+//				        System.out.println(out.toString());   //Prints the string content read from input stream
+//				        reader.close();
+//						}else 	if( args[0].trim().toLowerCase().equals("-v") ){
+//						   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//				        StringBuilder out = new StringBuilder();
+//				        String line= reader.readLine();
+//				        line= reader.readLine();
+//		            out.append(line);
+//				        System.out.println(out.toString().substring(0,11));   //Prints the string content read from input stream
+//				        reader.close();
+//						}
+//					}else{
+//					   BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+//			        StringBuilder out = new StringBuilder();
+//			        String line= reader.readLine();
+//			        line= reader.readLine();
+//	           out.append(line);
+//			        System.out.println(out.toString().substring(0,11));   //Prints the string content read from input stream
+//			        reader.close();;
+//					}			
+//			}
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//			// TODO: handle exception
+//		}
+//	}
 }

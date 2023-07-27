@@ -1,4 +1,4 @@
-package com.cfagent.api;
+package com.gtone.cf.rt.connect.impl.cagent;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -52,9 +52,9 @@ public class MTObjectOut {
 		}
 	}
 
-	protected void finalize() throws Throwable {
-		super.finalize();
-	}
+//	protected void finalize() throws Throwable {
+//		super.finalize();
+//	}
  
 	public int getLength() {
 		return byteOut.size();
@@ -64,11 +64,11 @@ public class MTObjectOut {
 		return byteOut;
 	}
 
-	public byte[] getM_buffer() {
+	public byte[] getM_buffer() throws Exception{
 		return byteOut.toByteArray();
 	}
 
-	public boolean WriteByte(int b) {
+	public boolean WriteByte(int b) throws Exception{
 		errMsg = "";
 		try {
 			temp = b;
@@ -92,26 +92,26 @@ public class MTObjectOut {
 		return true;
 	}
 
-	public void AddInt(int lVal) {
+	public void AddInt(int lVal) throws Exception{
 		WriteInt(1);
 		WriteInt(lVal);
 	}
 
-	public boolean WriteInt(int lVal) {
+	public boolean WriteInt(int lVal) throws Exception{
 		WriteString("" + lVal);
 		return true;
 	}
  
-	public void AddFraction(double dblVal) {
+	public void AddFraction(double dblVal) throws Exception{
 		WriteInt(1);
 		WriteString("" + dblVal);
 	}
 
-	public void AddString(String strVal) {
+	public void AddString(String strVal) throws Exception{
 		WriteInt(1);
 		WriteString(strVal);
 	}
-	public boolean WriteString(String strVal) {
+	public boolean WriteString(String strVal) throws Exception {
 		errMsg = "";
 		if (strVal == null) {
 			strVal = "";
@@ -129,12 +129,11 @@ public class MTObjectOut {
 
 			return true;
 		} catch (Exception e) {
-			errMsg = e.toString();
-			return false;
+			throw(e);
 		}
  
 	}
-	public boolean WriteByteFile( byte bytBytes[]) {
+	public boolean WriteByteFile( byte bytBytes[]) throws Exception {
 		WriteString(""+bytBytes.length);
 		errMsg = "";
 		if (bytBytes == null) {
@@ -145,13 +144,12 @@ public class MTObjectOut {
 			m_OutBuffer.write(bytBytes);
 			return true;
 		} catch (Exception e) {
-			errMsg = e.toString();
-			return false;
+			throw(e);
 		}
  
 	}
 
-	public boolean WriteByte( byte bytBytes[]) {
+	public boolean WriteByte( byte bytBytes[]) throws Exception {
 		errMsg = "";
 		if (bytBytes == null) {
 			bytBytes = "".getBytes();
@@ -167,8 +165,7 @@ public class MTObjectOut {
 
 			return true;
 		} catch (Exception e) {
-			errMsg = e.toString();
-			return false;
+			throw(e);
 		}
  
 	}
@@ -176,7 +173,7 @@ public class MTObjectOut {
 		return errMsg;
 	}
 	
-	public boolean WriteLongString(String strVal) {
+	public boolean WriteLongString(String strVal) throws Exception {
 		errMsg = "";
 		if (strVal == null) {
 			strVal = "";
@@ -195,8 +192,7 @@ public class MTObjectOut {
 			m_OutBuffer.write(bytBytes);
 			return true;
 		} catch (Exception e) {
-			errMsg = e.toString();
-			return false;
+			throw(e);
 		}
 	}	
 }

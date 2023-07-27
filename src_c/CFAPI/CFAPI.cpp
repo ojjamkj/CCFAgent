@@ -831,7 +831,11 @@ void CFAPI::API40_SCANDIR_TO_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pCh
 
 
 	// 0. Create the scanTempFile
-	const char* tempDirPath = "/home/cf/test";
+	const char* tempDirPath = getenv("TMPDIR");
+
+	if (tempDirPath == NULL) {
+		tempDirPath = "/tmp"; // Default temporary directory path in Linux
+	}
 
 	char scanTempFilePath[100]; // Adjust the array size based on your needs
 	sprintf(scanTempFilePath, "%s/CFAgentScanResult_XXXXXX", tempDirPath);

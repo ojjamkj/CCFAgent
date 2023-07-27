@@ -25,11 +25,16 @@ cd /home/cf/Dev/Build
 */
       
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.zip.GZIPInputStream;
 
 import com.gtone.cf.daemon.cmd.BaseCommand;
 import com.gtone.cf.rt.connect.IConnector;
+import com.gtone.cf.rt.connect.impl.CAgentConnector;
 import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileManager;
 import com.gtone.cf.rt.file.FileModel;
@@ -65,13 +70,13 @@ public class CCommandExample2 {
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-			obj.searchOnlyFile(inHash);
+//			obj.searchOnlyFile(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR
 //			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
-//			obj.scanToFile(inHash);
+			obj.scanToFile(inHash);
 
 		}catch(Exception e) {
 			e.printStackTrace();
@@ -354,7 +359,7 @@ public class CCommandExample2 {
 			String savedFile = "d:/Temp/scanResultFile.gz";
 			String unzipFile = "d:/Temp/unzipScanResultFile.txt";
 			FileManager.createFile(scanFileSource, savedFile);
-//			unzip(savedFile, new File(unzipFile));
+			unzipGzFile(savedFile, unzipFile);
 			//아래는 리턴값 샘플, 뉴라인키가 각 데이터의 구분자, 파일은 utf-8로 생성되어야함.
 			/** 
 			 * 
@@ -412,7 +417,7 @@ public class CCommandExample2 {
 		{
 //			conn = makeConnection(globalMap, param, connector,runCmd.isMultiple()  );
 //			BaseCommand result = connector.connect(runCmd);
-			CAgentConnector2 ca2 = new CAgentConnector2();
+			CAgentConnector ca2 = new CAgentConnector();
 			BaseCommand result =ca2.remoteCmdRun(globalMap, param, runCmd);
 			return result;
 		}
@@ -432,6 +437,19 @@ public class CCommandExample2 {
 		}
 
 	} 
+	
+	public static void unzipGzFile(String gzFilePath, String outputFilePath) throws IOException {
+	    try (FileInputStream fis = new FileInputStream(gzFilePath);
+	         GZIPInputStream gzipInputStream = new GZIPInputStream(fis);
+	         FileOutputStream fos = new FileOutputStream(outputFilePath)) {
+	        
+	        byte[] buffer = new byte[1024];
+	        int len;
+	        while ((len = gzipInputStream.read(buffer)) > 0) {
+	            fos.write(buffer, 0, len);
+	        }
+	    }
+	}
 	
 //	protected void unzip(String zipFile, File unzipFileName) {
 //

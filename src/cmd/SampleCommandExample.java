@@ -21,12 +21,12 @@ import com.gtone.cf.util.ICFConstants;
 
 import jspeed.base.util.StringHelper;
 
-public class CCommandExample {
+public class SampleCommandExample {
 
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 		try {
-			CCommandExample obj = new CCommandExample();
+			SampleCommandExample obj = new SampleCommandExample();
 			//1.CMD_AGENT_PING
 			obj.ping();
 			//2.CMD_CREATEFILE

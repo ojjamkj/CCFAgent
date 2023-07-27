@@ -1,4 +1,4 @@
-package com.cfagent.api;
+package com.gtone.cf.rt.connect.impl.cagent;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -35,9 +35,9 @@ public class MTObjectIn {
 			}
 		}
 	}
-	protected void finalize() throws Throwable {
-		super.finalize();
-	}
+//	protected void finalize() throws Throwable {
+//		super.finalize();
+//	}
 	public byte ReadByte() {
 		errMsg = "";
 		byte b = 0;
@@ -48,7 +48,7 @@ public class MTObjectIn {
 		}
 		return b;
 	}
-	public double ReadDouble() {
+	public double ReadDouble() throws Exception {
 		String temp=ReadString();
 		Double dValue = new Double( temp.trim().equals("") ? ""+0 : temp.trim());
 		return dValue.doubleValue();
@@ -66,13 +66,13 @@ public class MTObjectIn {
 
 	}
 
-	public double ReadFraction() {
+	public double ReadFraction() throws Exception {
 
 		return ReadDouble();
 
 	}
 
-	public String ReadString() {
+	public String ReadString() throws Exception {
 		try {
 			int leng;
 			byte[] byteData = null;
@@ -91,12 +91,11 @@ public class MTObjectIn {
 			ret= (new String(byteData));
 			return ret;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return " ";
+			throw(e);
 		}
 
 	}
-	public String ReadLongString() {
+	public String ReadLongString() throws Exception {
 		try {
 			int leng;
 			byte[] byteData = null;
@@ -118,8 +117,7 @@ public class MTObjectIn {
 			ret= (new String(byteData));
 			return ret;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return " ";
+			throw(e);
 		}
 
 	}
@@ -156,7 +154,7 @@ public class MTObjectIn {
 //		}
 //
 //	}
-	public String ReadFile() {
+	public String ReadFile() throws Exception {
 		try {
 			int leng;
 			byte[] byteData = null;
@@ -171,8 +169,7 @@ public class MTObjectIn {
 			ret= (new String(byteData));
 			return ret;
 		} catch (Exception e) {
-			e.printStackTrace();
-			return " ";
+			throw(e);
 		}
 
 	}
@@ -203,11 +200,9 @@ public class MTObjectIn {
 			return byteData;
 
 		} catch (IOException ie) {
-			ie.printStackTrace();
 			throw(ie);
 
 		} catch (Exception e) {
-			e.printStackTrace();
 			throw(e);
 
 		}
@@ -222,15 +217,13 @@ public class MTObjectIn {
 			return byteData;
 
 		} catch (IOException ie) {
-			ie.printStackTrace();
 			throw(ie);
 
 		} catch (Exception e) {
-			e.printStackTrace();
 			throw(e);
 		}
 	}	
-	public String ReadString(String charsetName) {
+	public String ReadString(String charsetName) throws Exception {
 		try {
 			int leng;
 			byte[] byteData = null;
@@ -248,8 +241,7 @@ public class MTObjectIn {
 				return (new String(byteData));
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
-			return " ";
+			throw(e);
 		}
 
 	}
