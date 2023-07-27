@@ -2,7 +2,7 @@ package com.cfagent.api;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.IOException;
 
  
 public class MTObjectOut {
@@ -33,6 +33,23 @@ public class MTObjectOut {
 			byteOut.reset();
 		}
 
+	}
+	
+	public void close() {
+		if( byteOut !=null){
+			try {
+				byteOut.close();
+			} catch (IOException e) {
+				
+			}
+		}
+		if( m_OutBuffer !=null){
+			try {
+				m_OutBuffer.close();
+			} catch (IOException e) {
+				
+			}
+		}
 	}
 
 	protected void finalize() throws Throwable {

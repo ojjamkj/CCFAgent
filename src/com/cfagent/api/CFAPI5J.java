@@ -49,9 +49,9 @@ public class CFAPI5J {
 
 	public static String pEnv;
 	public static int timeout = 0;
-	public static int readTimeout = 0;
+	public static int readTimeout = 5000;
 	public static int endFlag = -1;
-	public static long    engineCheckTime=-1;
+	public static long engineCheckTime=-1;
 
 	public byte priority = 0;
 	public int queue_idx = -1;
@@ -414,6 +414,9 @@ public class CFAPI5J {
 	public byte[] ReadFileByte() throws Exception {
 		return getInBuffer().ReadFileByte();
 	}
+	public byte[] ReadFileByte(int size) throws Exception {
+		return getInBuffer().ReadFileByte(size);
+	}
 	public String ReadString(String charsetName) {
 		return getInBuffer().ReadString(charsetName);
 	}
@@ -758,7 +761,11 @@ System.out.println("Calling:"+brexPrimary+":"+brexPort);
 				this.clientSock = null;
 				socketCloseCount += 1;
 			}
+			
+			
 		}
+		if (OutBuffer != null) this.OutBuffer.close();
+		if (InBuffer != null) this.InBuffer.close();
 	}
 
 	public synchronized void socketClose(Socket sock) {

@@ -16,6 +16,25 @@ public class MTObjectIn {
 	public void Clear() {
 		byteIn.reset();
 	}
+	public void close() {
+		if(byteIn!= null) {
+			try {
+				byteIn.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		if(m_InBuffer!= null) {
+			try {
+				m_InBuffer.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
 	protected void finalize() throws Throwable {
 		super.finalize();
 	}
@@ -159,32 +178,58 @@ public class MTObjectIn {
 	}
 	public  byte[] ReadFileByte() throws Exception {
 		try {
-		int leng;
-		byte[] byteData = null;
-		int tx; 
-		String ret="";
-		leng=Integer.parseInt(ReadString() );
+			int leng;
+			byte[] byteData = null;
+			int tx; 
+			String ret="";
+			leng=Integer.parseInt(ReadString() );
 
-		byteData = new byte[leng];
-		
-		
-		
-		int size=m_InBuffer.read(byteData, 0, leng);
-		
-		return byteData;
-		
-	} catch (IOException ie) {
-		ie.printStackTrace();
-		throw(ie);
-		
-	} catch (Exception e) {
-		e.printStackTrace();
-		throw(e);
-		
+
+			//			int leng;
+			//			byte[] byteData = null;
+			//			int tx;
+			//			String ret="";
+			//			leng = (int) m_InBuffer.readByte() & 0xff;
+			//			tx = (int) m_InBuffer.readByte() & 0xff;
+			//			leng = (leng * 256) + tx;
+			//			byteData = new byte[leng];	
+
+			byteData = new byte[leng];
+
+
+
+			int size=m_InBuffer.read(byteData, 0, leng);
+
+			return byteData;
+
+		} catch (IOException ie) {
+			ie.printStackTrace();
+			throw(ie);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw(e);
+
+		}
 	}
+	public  byte[] ReadFileByte(int leng) throws Exception {
+		try {
 
+			byte[] byteData = new byte[leng];
 
-	}
+			int size=m_InBuffer.read(byteData, 0, leng);
+
+			return byteData;
+
+		} catch (IOException ie) {
+			ie.printStackTrace();
+			throw(ie);
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw(e);
+		}
+	}	
 	public String ReadString(String charsetName) {
 		try {
 			int leng;

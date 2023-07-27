@@ -59,13 +59,13 @@ public class CCommandExample2 {
 //			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
-			obj.viewFile(inHash); 		// 일부처리
+//			obj.viewFile(inHash); 		// 일부처리
 			//4.CMD_BUILD
 //			obj.build(inHash);
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
-//			obj.searchOnlyFile(inHash);
+			obj.searchOnlyFile(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR
@@ -251,21 +251,9 @@ public class CCommandExample2 {
 			throw new Exception( resultCmd.getErrorMessage() );
 		else {
 			ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
-			for(FileModel model : files)
+			for(FileModel fileModel : files)
 			{
-				System.out.println(model.getPath());
-				System.out.println(model.getSize());
-				System.out.println(model.getCanRead());
-				System.out.println(model.isCanWrite());
-				System.out.println(model.getFilename());
-				System.out.println(model.getFileSource());
-				System.out.println(model.isDirectory());
-				System.out.println(model.getLastModifiedDate());
-				System.out.println(model.getLength());
-				System.out.println(model.getParent());
-				System.out.println(model.getRelPath());
-				System.out.println(model.getRootPath());
-				System.out.println(model.getType());
+				FileManager.createFile(fileModel.getFileSource(), fileModel.getPath().replaceAll("/home/cf/tofile","D:/temp/ttt"));
 			}	
 		}
 	}

@@ -303,6 +303,9 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 	json_decref(jsonFileObject);
 
 	// 2. write file
+	m_ObjBuffer->WriteLong( fileinfo.st_size);
+	printf("fileinfo.st_size =[%d] ", fileinfo.st_size);
+
 	long outLeng = m_ObjBuffer->getLength();
 	m_ObjBuffer->setMaxLength(outLeng + fileinfo.st_size);
 	printf("tot fileinfo.st_size =[%d] \n",outLeng+ fileinfo.st_size);
@@ -765,30 +768,29 @@ void CFAPI::API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int 
 		json_t *element = json_array_get(dir_info, i);
 		long fileSize = (long long)json_integer_value(json_object_get(element, "size"));
 		allFileSize = allFileSize + fileSize;
+
+
 	}
 	long outLeng = m_ObjBuffer->getLength();
 	m_ObjBuffer->setMaxLength(outLeng + allFileSize);
 	printf("tot fileinfo.st_size =[%d] \n",outLeng+ allFileSize);
 
+	((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)m_ObjBuffer->m_Buffer, outLeng);
+
 	for (size_t i = 0; i < array_length; i++) {
+
 		json_t *element = json_array_get(dir_info, i);
 
 		const char* filePath = json_string_value(json_object_get(element, "path"));
+		long fileSize = (long long)json_integer_value(json_object_get(element, "size"));
+
+		printf("file=%s, size=%d \n", filePath, fileSize);
 
 		FILE* file = fopen(filePath, "rb");
 		if (file == NULL) {
-//			m_ObjBuffer->Clear1();
-//			m_ObjBuffer->WriteLong((long)0);
-//			m_ObjBuffer->WriteLong((long)0);
-
-//			m_ObjBuffer->WriteString("false"); //result
-//			m_ObjBuffer->WriteString("Failed to open file."); //message
-//			printf("(end)[%s]\n", "Failed to open file.");
-
 			return;
 		}
 
-		((CCSManager*)m_pManager)->SocWrite(m_pChildSoc, (unsigned char *)m_ObjBuffer->m_Buffer, outLeng);
 		unsigned char buffer[10240];
 		size_t bytes_read;
 		int firstWrite = 0;
@@ -978,6 +980,9 @@ void CFAPI::API40_SCANDIR_TO_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pCh
 	m_ObjBuffer->WriteLong((long)0);
 	m_ObjBuffer->WriteString("true"); //result
 	m_ObjBuffer->WriteString(""); //message
+
+	m_ObjBuffer->WriteLong( fileinfo.st_size);
+	printf("fileinfo.st_size =[%d] ", fileinfo.st_size);
 
 	long outLeng = m_ObjBuffer->getLength();
 	m_ObjBuffer->setMaxLength(outLeng + fileinfo.st_size);

@@ -63,6 +63,8 @@ public class CAgentConnector2 extends AbstractConnector {
 						throw new Exception("received file info is null");
 					}
 					
+					System.out.println(jsonstring);
+					
 					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath, true);
 					
 					resultCmd.setResult(true, null, file);
@@ -166,15 +168,17 @@ public class CAgentConnector2 extends AbstractConnector {
 					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
 					int size  = viewDirList.size();
 					System.out.println("jsonstring size = " + size);
-					ArrayList resultList = new ArrayList();
+					
+					ArrayList resultList = new ArrayList();					
 					for(int i=0; i<size; i++)
 					{
 						
 						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
 						if(fileModel != null) {
-							resultList.add(fileModel);
+							int fileLength = (int)fileModel.getLength();
 							System.out.println(fileModel.getPath());
-							fileModel.setFileSource(conn.ReadFileByte());
+							fileModel.setFileSource(conn.ReadFileByte(fileLength));
+							resultList.add(fileModel);
 						}
 					}
 					
@@ -410,44 +414,51 @@ public class CAgentConnector2 extends AbstractConnector {
 		return file;
 	}
 	public BaseCommand remoteCmdRun(HashMap globalMap, HashMap param, BaseCommand cmd) throws Exception{
-		CFAPI5J conn = new CFAPI5J();
-		String ip = (String)param.get(ICFConstants.TARGET_IP);
-		int port = Integer.parseInt( (String)param.get(ICFConstants.TARGET_PORT));
-		BaseCommand resultCmd = null;
-		conn.brexPrimary=ip;
-		conn.brexPort=port;
-		conn.Initialize("" + cmd.getCommand()); //CMD_DELETEFILE
-		switch(cmd.getCommand()) {
-		case BaseCommand.CMD_AGENT_PING:
-			resultCmd = CMD_AGENT_PING(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_CREATEFILE:
-			resultCmd = CMD_CREATEFILE(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_VIEWFILE:
-			resultCmd = CMD_VIEWFILE(conn,param,cmd);
-			break;			
-		case BaseCommand.CMD_DELETEFILE:
-			resultCmd = CMD_DELTEFILE(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_DOSEARCH_ONLY_FILE:
-			resultCmd = CMD_DOSEARCH_ONLY_FILE(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_VIEWDIR:
-			resultCmd = CMD_VIEWDIR(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_BUILD:
-			resultCmd = CMD_BUILD(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_DOSEARCH_ONLY_DIR:
-			resultCmd = CMD_DOSEARCH_ONLY_DIR(conn,param,cmd);
-			break;
-		case BaseCommand.CMD_SCANDIR_TO_FILE:
-			resultCmd = CMD_SCANDIR_TO_FILE(conn,param,cmd);
-			break;	
+		CFAPI5J conn = null;
+		try {
+			conn = new CFAPI5J();
+			String ip = (String)param.get(ICFConstants.TARGET_IP);
+			int port = Integer.parseInt( (String)param.get(ICFConstants.TARGET_PORT));
+			BaseCommand resultCmd = null;
+			conn.brexPrimary=ip;
+			conn.brexPort=port;
+			conn.Initialize("" + cmd.getCommand()); //CMD_DELETEFILE
+			switch(cmd.getCommand()) {
+			case BaseCommand.CMD_AGENT_PING:
+				resultCmd = CMD_AGENT_PING(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_CREATEFILE:
+				resultCmd = CMD_CREATEFILE(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_VIEWFILE:
+				resultCmd = CMD_VIEWFILE(conn,param,cmd);
+				break;			
+			case BaseCommand.CMD_DELETEFILE:
+				resultCmd = CMD_DELTEFILE(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_DOSEARCH_ONLY_FILE:
+				resultCmd = CMD_DOSEARCH_ONLY_FILE(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_VIEWDIR:
+				resultCmd = CMD_VIEWDIR(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_BUILD:
+				resultCmd = CMD_BUILD(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_DOSEARCH_ONLY_DIR:
+				resultCmd = CMD_DOSEARCH_ONLY_DIR(conn,param,cmd);
+				break;
+			case BaseCommand.CMD_SCANDIR_TO_FILE:
+				resultCmd = CMD_SCANDIR_TO_FILE(conn,param,cmd);
+				break;	
+				
+			}
+			return resultCmd;
+		}catch(Exception e) {
+			throw(e);
+		}finally {
 			
 		}
-		return resultCmd;
 	}
 
 	@Override
