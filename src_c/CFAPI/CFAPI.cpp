@@ -9,114 +9,11 @@ CFAPI::CFAPI(){
 
 CFAPI::~CFAPI() {
 }
-//char* CFAPI::formatdate(char *str, time_t val)
-//{
-//	strftime(str, 36, "%Y:%m:%d %H:%M:%S", localtime(&val));
-//	return str;
-//}
 
-
-//void CFAPI::listFiles(const char* path, const char* regexPattern) {
-//	DIR* directory = opendir(path);
-//	if (directory == NULL) {
-//		perror("디렉토리를 열 수 없습니다.");
-//		return;
-//	}
-//
-//	regex_t regex;
-//	int regexCompileResult = regcomp(&regex, regexPattern, REG_EXTENDED | REG_NOSUB);
-//	if (regexCompileResult != 0) {
-//		char regexErrorBuffer[100];
-//		regerror(regexCompileResult, &regex, regexErrorBuffer, sizeof(regexErrorBuffer));
-//		fprintf(stderr, "정규식 컴파일 에러: %s\n", regexErrorBuffer);
-//		closedir(directory);
-//		return;
-//	}
-//
-//	struct dirent* entry;
-//	while ((entry = readdir(directory)) != NULL) {
-//		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-//			continue; // 현재 디렉토리와 상위 디렉토리 무시
-//		}
-//
-//		char fullPath[PATH_MAX];
-//		snprintf(fullPath, sizeof(fullPath), "%s/%s", path, entry->d_name);
-//
-//		struct stat fileStat;
-//		if (stat(fullPath, &fileStat) == -1) {
-//			perror("파일 정보를 가져올 수 없습니다.");
-//			continue;
-//		}
-//
-//		if (S_ISDIR(fileStat.st_mode)) {
-//			printf("디렉토리: %s\n", fullPath);
-//			/*
-//			if (regexec(&regex, entry->d_name, 0, NULL, 0) == 0) {
-//				printf("디렉토리: %s\n", fullPath);
-//			}
-//			 */
-//			listFiles(fullPath, regexPattern); // 재귀적으로 하위 디렉토리 검색
-//		}
-//		else if (S_ISREG(fileStat.st_mode)) {
-//			printf("파일: %s\n", fullPath);
-//			/*
-//			if (regexec(&regex, entry->d_name, 0, NULL, 0) == 0) {
-//				printf("파일: %s\n", fullPath);
-//			}
-//			 */
-//		}
-//	}
-//
-//	regfree(&regex);
-//	closedir(directory);
-//}
-//
-//
-//void CFAPI::listDirectories(const char* path) {
-//
-//}
-
-//void CFAPI::API01(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage) {
-//	m_pChildSoc=pChildSoc;
-//	m_pManager = pManage;
-//	m_ObjBuffer = m_ObjBuffer2;
-//	char path[1000];
-//	char temp[100];
-//	int i;
-//	fileCount = 0;
-//	m_ObjBuffer->ReadString(temp);// 빈값 0
-//	// 함수 하나당 두번 Read
-//	m_ObjBuffer->ReadString(temp);	m_ObjBuffer->ReadString(path); //경로
-//
-//	listDirectories(path);
-//
-//	m_ObjBuffer->Clear1();
-//	m_ObjBuffer->WriteLong((long)0);
-//	m_ObjBuffer->WriteLong((long)fileCount);//rowcount
-//	m_ObjBuffer->WriteLong((long)1);//colcount
-//	m_ObjBuffer->WriteByte((unsigned char)1); // end
-//	m_ObjBuffer->WriteString("");
-//
-//
-//
-//	for (int i = 0; i<1; i++) {
-//		m_ObjBuffer->WriteByte((unsigned char)DATA_TYPE_STRING);
-//	}
-//	char str[20];
-//	for (int i = 0; i<fileCount; i++) {
-//		m_ObjBuffer->WriteString(fileList[i]);
-//	}
-//
-//
-//}
-//
-//void CFAPI::API02(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
-//{
-//
-//}
 
 void CFAPI::API03_PING(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
+	_WriteLog(_LOG_LOG, "[CMD_PING] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -146,7 +43,7 @@ void CFAPI::API03_PING(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCS
 
 void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_VIEWDIR] \n");
+	_WriteLog(_LOG_LOG, "[CMD_VIEWDIR] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -224,6 +121,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 
 void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
+	_WriteLog(_LOG_LOG, "[CMD_VIEWFILE] \n");
 	m_pChildSoc = pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -326,7 +224,7 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 
 void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_CREATEFILE] \n");
+	_WriteLog(_LOG_LOG, "[CMD_CREATEFILE] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -482,7 +380,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_BUILD] \n");
+	_WriteLog(_LOG_LOG, "[CMD_BUILD] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -587,7 +485,7 @@ void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CC
 
 void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_DELETEFILE] \n");
+	_WriteLog(_LOG_LOG, "[CMD_DELETEFILE] \n");
 	m_pChildSoc = pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -628,7 +526,7 @@ void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 }
 void CFAPI::API26_DOSEARCH_ONLY_DIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_DOSEARCH_ONLY_DIR] \n");
+	_WriteLog(_LOG_LOG, "[CMD_DOSEARCH_ONLY_DIR] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -684,7 +582,7 @@ void CFAPI::API26_DOSEARCH_ONLY_DIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int p
 
 void CFAPI::API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[CMD_DOSEARCH_ONLY_FILE] \n");
+	_WriteLog(_LOG_LOG, "[CMD_DOSEARCH_ONLY_FILE] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;
@@ -811,9 +709,9 @@ void CFAPI::API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int 
 }
 
 
-void CFAPI::API27_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
+void CFAPI::API41_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage)
 {
-	printf("[API27_DOSEARCH_ONLY_FILE_COLLECT] \n");
+	_WriteLog(_LOG_LOG, "[CMD_DOSEARCH_ONLY_FILE_COLLECT] \n");
 	m_pChildSoc=pChildSoc;
 	m_pManager = pManage;
 	m_ObjBuffer = m_ObjBuffer2;

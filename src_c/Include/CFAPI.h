@@ -65,7 +65,7 @@ public:
 		void API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 		void API26_DOSEARCH_ONLY_DIR(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 		void API27_DOSEARCH_ONLY_FILE(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
-		void API27_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
+		void API41_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 		void API28_DELETEFILE(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 		void API40_SCANDIR_TO_FILE(CBRMObj  *m_ObjBuffer, int m_itemCnt, int pChildSoc, CCSManager *pManage);
 };

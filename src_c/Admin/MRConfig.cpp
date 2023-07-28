@@ -37,7 +37,7 @@
 //#define     DEFAULT_DEBUGLEVEL           0
 //#define     DEFAULT_LOADDEBUGLEVEL       0
 
-#define     DEFAULT_LOGPATH              "."
+#define     DEFAULT_LOGPATH              "./logs"
 #define     DEFAULT_LOG_QSIZE            1000
 
 #define     MSG_FILEOPEN_ERR            "File Open Error : %s\n"
@@ -132,7 +132,7 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 
 	  
 
-	fileIni->ReadString("BRMINER", "DEBUG", "N", _DEBUG_YN, 2, false);
+	fileIni->ReadString("cfagent", "DEBUG", "N", _DEBUG_YN, 2, false);
  
 	if (_DEBUG_YN[0] == 'Y') {
 		printf("004==>%s\n", fileName);
@@ -143,18 +143,18 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 	}
 	  
 	//	if (_DEBUG_YN[0] == 'Y')
-	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
-	fileIni->ReadString("BRMINER", "Method", "", configRec.lpszEncMethod, 20, false); //added by DSKIM
- 
-																					  //	if (_DEBUG_YN[0] == 'Y')
-	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
-	fileIni->ReadString("BRMINER", "RuleMode", "AML", configRec.RuleMode, 5, true);
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+//	fileIni->ReadString("BRMINER", "Method", "", configRec.lpszEncMethod, 20, false); //added by DSKIM
+//
+//																					  //	if (_DEBUG_YN[0] == 'Y')
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+//	fileIni->ReadString("BRMINER", "RuleMode", "AML", configRec.RuleMode, 5, true);
 
-	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
 	 
 
 	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
-	fileIni->ReadString("BRMINER", "LogMode", "", buf, 5 , false);
+	fileIni->ReadString("cfagent", "LogMode", "", buf, 5 , false);
 	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
 
 	configRec.DBAgentCount = 3;
@@ -176,8 +176,7 @@ void CONFIGPARM::DisplayConfigParm() {
 //	sprintf(msg, "%s\n", "BRMiner 5.01 (2020.07.01) "); 
 //	sprintf(msg, "%s\n", "BRMiner 5.02 (2020.12.01) ");
 //	sprintf(msg, "%s\n", "BRMiner 5.03 (2021.06.30) ");
-	sprintf(msg, "%s\n", "BRMiner 5.03 (2021.09.01) ");
-	sprintf(msg, "%s\n", "BRMiner 5.04 (2021.12.28) ");
+	sprintf(msg, "%s\n", "ChangeFlow Agent-C 1.00 (2023.07.28) ");
 	_WriteLogNo(_LOG_LOG, msg);
 
 	//_WriteLogNo(_LOG_LOG, "Configuration\n");
@@ -185,9 +184,9 @@ void CONFIGPARM::DisplayConfigParm() {
 
 	sprintf(msg, "     Port                = %d", configRec.usPort);
 	_WriteLogNo(_LOG_LOG, msg);
-	sprintf(msg, "     Admin Port          = %d", configRec.amPort);
-	sprintf(msg, "     RuleMode            = %s", configRec.RuleMode);
-	printf("     RuleMode            = %s\n", configRec.RuleMode);
+//	sprintf(msg, "     Admin Port          = %d", configRec.amPort);
+//	sprintf(msg, "     RuleMode            = %s", configRec.RuleMode);
+//	printf("     RuleMode            = %s\n", configRec.RuleMode);
 
 	_WriteLogNo(_LOG_LOG, msg);
 	sprintf(msg, "     Max Parm Size       = %5d KB",
@@ -228,8 +227,8 @@ void CONFIGPARM::DisplayConfigParm() {
 	sprintf(msg, "     Trace Last API       = %s\n", configRec.usAllTracle ? "Yes" : "No");
 	_WriteLogNo(_LOG_LOG, msg);
 
-	sprintf(msg, "     RPC Enable       = No\n");
-	_WriteLogNo(_LOG_LOG, msg);
+//	sprintf(msg, "     RPC Enable       = No\n");
+//	_WriteLogNo(_LOG_LOG, msg);
 
 //	sprintf(msg, "     Rule Apply Time      = %02d\n", configRec.usRuleApplyTime  );
 //	_WriteLogNo(_LOG_LOG, msg);
@@ -237,8 +236,8 @@ void CONFIGPARM::DisplayConfigParm() {
 	 
 	_WriteLogNo(_LOG_LOG, "");
 
-	sprintf(msg, "     PreLoad                    = %s", configRec.PreLoad);
-	_WriteLogNo(_LOG_LOG, msg);
+//	sprintf(msg, "     PreLoad                    = %s", configRec.PreLoad);
+//	_WriteLogNo(_LOG_LOG, msg);
 	sprintf(msg, "     Running TimeOut            = %4d Sec",
 			configRec.ulRunTimeOut);
 	_WriteLogNo(_LOG_LOG, msg);
@@ -253,8 +252,8 @@ void CONFIGPARM::DisplayConfigParm() {
 	sprintf(msg, "     Calculate queue heap size  = %4d KB",
 			configRec.ulMaxMemSize3 / 1024);
 	_WriteLogNo(_LOG_LOG, msg);
-	sprintf(msg, "     Max query count            = %4d",		configRec.ulMaxQueryCount);
-	_WriteLogNo(_LOG_LOG, msg);
+//	sprintf(msg, "     Max query count            = %4d",		configRec.ulMaxQueryCount);
+//	_WriteLogNo(_LOG_LOG, msg);
 
 	sprintf(msg, "     Log Mode                   = %d%d%d%d",		configRec.LogMode[0],configRec.LogMode[1],configRec.LogMode[2],configRec.LogMode[3]);
 	_WriteLogNo(_LOG_LOG, msg);

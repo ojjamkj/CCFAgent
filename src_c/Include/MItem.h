@@ -6,13 +6,13 @@
 //#define 	KEY_FILE                    "C:\\eclise_Engine\\W_BR\\BRMiner_engine4.5\\Bin\\WIN\\POSTGRE\\key.dat"
 
 #if	defined(WIN32)
-#define 	DEFAULT_INIFILE             "./BRMCONF.ini"
+#define 	DEFAULT_INIFILE             "./agent.properties"
 #define 	KEY_FILE             "./key.dat"
 
 #elif defined(_OS390) || defined(_ZOS)
     #define DEFAULT_INIFILE             "DD:BRMCONF"
 #else
-    #define DEFAULT_INIFILE             "./BRMCONF.ini"
+    #define DEFAULT_INIFILE             "./agent.properties"
 	#define 	KEY_FILE             "./key.dat"
 #endif
 

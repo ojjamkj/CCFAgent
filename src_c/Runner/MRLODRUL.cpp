@@ -384,8 +384,8 @@ extern char               _DBPWD_ENC[3]; //  ENC
     char         RS40_1[21];         // Pgm Id
     long      RS40_2;             // Start Rule Id
     long      RS40_3;             // Max Ret Count  
-    short        RS40_4;             // Parm구분 : 1.Object  2.Stream
-    long      RS40_5;             // 실행기준일 ItemCd
+    short        RS40_4;             // Parm援щ텇 : 1.Object  2.Stream
+    long      RS40_5;             // �떎�뻾湲곗��씪 ItemCd
     
     long      RS41_2;             // Item Cd
     short        RS41_3;             // Item Type
@@ -398,25 +398,25 @@ extern char               _DBPWD_ENC[3]; //  ENC
 	char		 RS32_2[200+1];      // Rule Name
 
     long      RS43_1;             // Rule No
-    short        RS43_2;             // Rule 형태
+    short        RS43_2;             // Rule �삎�깭
     char         RS43_3[201];        // Branch Name
     short        RS43_4;             // Preload
-    short        RS43_5;             // reRun 여부
-    short        RS43_6;             // Break 여부
+    short        RS43_5;             // reRun �뿬遺�
+    short        RS43_6;             // Break �뿬遺�
     short        RS43_7;			 // Agg_Option  
 	char         RS43_8[31];         // Group    
-    char		 RS43_9[31];         // 정렬방법
+    char		 RS43_9[31];         // �젙�젹諛⑸쾿
 	char		 RS43_A[201];        // Default
-	short		 RS43_B;			 // Static여부
+	short		 RS43_B;			 // Static�뿬遺�
 
 	double		 RS44_1;
 	
 	char		 RS44_2[9];          // Start Date
 	char		 RS44_3[9];          // End Date
-	short        RS44_4;             // Sort여부
+	short        RS44_4;             // Sort�뿬遺�
 	
 	short        RS45_1;             // Seq
-    char         RS45_2[3000+1];       // Result CONDITION_COLUMN_SIZE==> MITEM.H _KBIZ=100  아니면 50
+    char         RS45_2[3000+1];       // Result CONDITION_COLUMN_SIZE==> MITEM.H _KBIZ=100  �븘�땲硫� 50
 
 	short		 RS4A_1;
     char         RS4A_2[3000+1];       // Value1
@@ -427,7 +427,7 @@ extern char               _DBPWD_ENC[3]; //  ENC
     char		 RS48_3[3000+1];		 // Expression
 
 	short        RS4D_2;             // Seq
-    char         RS4D_3[101];        // 판단값
+    char         RS4D_3[101];        // �뙋�떒媛�
     
 /* EXEC SQL END DECLARE SECTION; */ 
 	
@@ -483,7 +483,7 @@ void   BuildDataStructure()
 	g_pCBREXLog = new CBREXLog();
 	
 	_WriteLogNo( _LOG_LOG, "\n**************************************************\n" );
-	_WriteLog( _LOG_LOG, "BRMiner Engine Start.\n" );
+	_WriteLog( _LOG_LOG, "ChangeFlow Agent Start.\n" );
 		
 	configParm->DisplayConfigParm();
 
@@ -503,7 +503,7 @@ void   BuildDataStructure()
 extern char             UsedIndex[5];
 
 /**********************************************************************/
-//  Running시 Load안된놈, Deploy로 삭제된놈 Load 
+//  Running�떆 Load�븞�맂�냸, Deploy濡� �궘�젣�맂�냸 Load 
 int CMRLoadData::ReloadRuleBody( RULE_LIST *pRule )
 {
     int    rc = 0;
@@ -666,7 +666,7 @@ void   CMRLoadData::BuildNameList( void )
 
 
 
-//   Deploy시에만 Reload
+//   Deploy�떆�뿉留� Reload
 int   CMRLoadData::ReloadPgmById( char *pgmId, char *errMessage )
 {
     return 0;
@@ -674,7 +674,7 @@ int   CMRLoadData::ReloadPgmById( char *pgmId, char *errMessage )
 
 
     
-//  Deploy시 Header Reload
+//  Deploy�떆 Header Reload
 int CMRLoadData::ReloadRuleHeader( RULE_LIST *pNodeNew,
 								 char *errMessage )
 {
@@ -902,7 +902,7 @@ void   CMRLoadData::BuildConfiguration( void )
 }
 
 
-//  Engine 정보
+//  Engine �젙蹂�
 void   CMRLoadData::ReadEngineConfig( void )
 {
 

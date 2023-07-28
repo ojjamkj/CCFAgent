@@ -219,7 +219,7 @@ void   BuildDataStructure()
 	g_pCBREXLog = new CBREXLog();
 	
 	_WriteLogNo( _LOG_LOG, "\n**************************************************\n" );
-	_WriteLog( _LOG_LOG, "BRMiner Engine Start.\n" );
+	_WriteLog( _LOG_LOG, "ChangeFlow Agent.\n" );
 		
 	configParm->DisplayConfigParm();
 

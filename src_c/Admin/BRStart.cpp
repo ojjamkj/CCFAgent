@@ -308,7 +308,7 @@ long CCSThread::MainProcess(char *startIp) {
 		return 0;
 	}
 	if (strcmp(PgmId, "41") == 0) {
-		cfapi.API27_DOSEARCH_ONLY_FILE_COLLECT(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		cfapi.API41_DOSEARCH_ONLY_FILE_COLLECT(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet();
 		return 0;
 	}
