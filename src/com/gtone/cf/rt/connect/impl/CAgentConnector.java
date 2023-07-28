@@ -245,7 +245,7 @@ public class CAgentConnector extends AbstractConnector {
 						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
 						if(fileModel != null) {
 							int fileLength = (int)fileModel.getLength();
-							System.out.println(fileModel.getPath());
+//							System.out.println(fileModel.getPath());
 							fileModel.setFileSource(conn.ReadFileByte(fileLength));
 							resultList.add(fileModel);
 						}
