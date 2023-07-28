@@ -288,22 +288,22 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 	}
 
 	// 2. compare checksum with two file
-	if (calculate_sha256(filePath, fileChecksum, temp)) {
-		printf("SHA-256 same file : [%s]\n", filePath);
-	}
-	else {
-		printf("SHA-256 error :[%s] \n", temp);
-		m_ObjBuffer->Clear1();
-		m_ObjBuffer->WriteLong((long)0);
-		m_ObjBuffer->WriteLong((long)0);
-
-		// final result
-		m_ObjBuffer->WriteString("false"); //result
-		m_ObjBuffer->WriteString("Error while comparing file checksum"); //message
-		printf("(end)[%s]\n", temp);
-
-		return;
-	}
+//	if (calculate_sha256(filePath, fileChecksum, temp)) {
+//		printf("SHA-256 same file : [%s]\n", filePath);
+//	}
+//	else {
+//		printf("SHA-256 error :[%s] \n", temp);
+//		m_ObjBuffer->Clear1();
+//		m_ObjBuffer->WriteLong((long)0);
+//		m_ObjBuffer->WriteLong((long)0);
+//
+//		// final result
+//		m_ObjBuffer->WriteString("false"); //result
+//		m_ObjBuffer->WriteString("Error while comparing file checksum"); //message
+//		printf("(end)[%s]\n", temp);
+//
+//		return;
+//	}
 
 	// 3. set last modified date of created file
 	size_t modifiedDateLength = strlen(fileLastModifiedDate);

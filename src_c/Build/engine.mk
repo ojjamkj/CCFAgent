@@ -13,7 +13,7 @@ DIR_INC		= $(DIR_SRC)/Include
 DIR_TMP		= $(DIR_DEV)/Tmp
 DIR_OUT		= $(DIR_DEV)/Bin/LINUX/$(ORAVER)
  
-ORA_INC		=  -I"$(DIR_INC)/openssl/"
+#ORA_INC		=  -I"$(DIR_INC)/openssl/"
 
 INC_PATH	=  -I"$(DIR_INC)"  $(ORA_INC) 
 

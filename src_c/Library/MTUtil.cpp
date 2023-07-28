@@ -9,8 +9,6 @@
 #include    <string.h>
 #include 	<dirent.h>
 #include    <ctype.h>
-#include 	<openssl/md5.h>
-#include 	<openssl/sha.h>
 #include    "MTUtil.h"
 #include 	<sys/types.h>
 #include 	<sys/stat.h>
@@ -495,40 +493,40 @@ const char* get_relative_path(const char* filePath, const char* rootPath ) {
 	return "/";
 }
 
-int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
-	unsigned char buffer[1024];
-	size_t bytesRead;
-	unsigned char shaData[1024];
-	unsigned char digest[SHA256_DIGEST_LENGTH];
-	char sha256String[SHA256_DIGEST_LENGTH * 2 + 1];
-
-	printf("let's do checksum of %s", file_path);
-	FILE* file = fopen(file_path, "rb");
-	if (file == NULL) {
-		strcpy(error_msg, "can't open file.");
-		return false;
-	}
-	SHA256_CTX sha256Context;
-	SHA256_Init(&sha256Context);
-	while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-		SHA256_Update(&sha256Context, buffer, bytesRead);
-	}
-	SHA256_Final(digest, &sha256Context);
-
-	memset(sha256String, 0xff, SHA256_DIGEST_LENGTH * 2 + 1);
-	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-		sprintf(&sha256String[i * 2], "%02X", (unsigned int)digest[i]);
-	}
-	fclose(file);
-	printf("file's checksum %s", sha256String);
-	if (strcmp((const char*)sha256String, sha256sum) == 0) {
-		return true;
-	}
-	else {
-		sprintf(error_msg, "not matched file checksum");
-		return false;
-	}
-}
+//int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
+//	unsigned char buffer[1024];
+//	size_t bytesRead;
+//	unsigned char shaData[1024];
+//	unsigned char digest[SHA256_DIGEST_LENGTH];
+//	char sha256String[SHA256_DIGEST_LENGTH * 2 + 1];
+//
+//	printf("let's do checksum of %s", file_path);
+//	FILE* file = fopen(file_path, "rb");
+//	if (file == NULL) {
+//		strcpy(error_msg, "can't open file.");
+//		return false;
+//	}
+//	SHA256_CTX sha256Context;
+//	SHA256_Init(&sha256Context);
+//	while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
+//		SHA256_Update(&sha256Context, buffer, bytesRead);
+//	}
+//	SHA256_Final(digest, &sha256Context);
+//
+//	memset(sha256String, 0xff, SHA256_DIGEST_LENGTH * 2 + 1);
+//	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
+//		sprintf(&sha256String[i * 2], "%02X", (unsigned int)digest[i]);
+//	}
+//	fclose(file);
+//	printf("file's checksum %s", sha256String);
+//	if (strcmp((const char*)sha256String, sha256sum) == 0) {
+//		return true;
+//	}
+//	else {
+//		sprintf(error_msg, "not matched file checksum");
+//		return false;
+//	}
+//}
 
 void convertToHexString(char *output, unsigned long value) {
      sprintf(output, "%08lx", value);
@@ -699,155 +697,155 @@ unsigned char StringChange(char *pData, char *pSrc, char *pDest) {
 }
 
 
-char* DetailTimeStamp(char *lpszDateTime) {
-	time_t localTime;
-	struct tm *stTempTime;
-	struct tm pTm2;
-	int usec;
+//char* DetailTimeStamp(char *lpszDateTime) {
+//	time_t localTime;
+//	struct tm *stTempTime;
+//	struct tm pTm2;
+//	int usec;
+//
+//#ifdef WIN32
+//	struct _timeb timebuffer;
+//	_ftime(&timebuffer);
+//	usec = (long)timebuffer.millitm;
+//#else
+//	struct timeval stamp;
+//	stamp.tv_usec = 0;
+//	gettimeofday(&stamp, NULL);
+//
+//	usec = stamp.tv_usec / 1000;
+//#endif
+//
+//	localTime = time(&localTime); /* Get time as long integer. */
+//
+//#ifdef WIN32
+//	stTempTime = localtime(&localTime);
+//#else
+//	stTempTime = localtime_r(&localTime, &pTm2);
+//#endif
+//
+//	sprintf(lpszDateTime
+//		, "%4d%02d%02d%02d%02d%02d%03d"
+//		, stTempTime->tm_year + 1900
+//		, stTempTime->tm_mon + 1
+//		, stTempTime->tm_mday
+//		, stTempTime->tm_hour
+//		, stTempTime->tm_min
+//		, stTempTime->tm_sec, usec);
+//
+//	return lpszDateTime;
+//}
+//
+//void GetCurrentTimeStr(char *TimeBuffer) {
+//	time_t localTime;
+//	struct tm *stTempTime;
+//	struct tm pTm2;
+//	char CurrentTime[20];
+//
+//	localTime = time(&localTime);
+//#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
+//	struct timeval tv;
+//	gettimeofday(&tv, 0);
+//	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
+//#elif defined(_OS390) || defined(_OS400)
+//	time(&localTime);
+//#elif  defined(WIN32)
+//	time(&localTime);
+//	stTempTime = localtime(&localTime);
+//
+//#endif
+//
+//	//	memset(CurrentTime, NULL, sizeof(CurrentTime));
+//
+//	sprintf((char *)CurrentTime, "%4d%02d%02d %02d%02d%02d",
+//		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
+//		stTempTime->tm_min, stTempTime->tm_sec);
+//
+//	memcpy(TimeBuffer, (char *)CurrentTime, sizeof(CurrentTime));
+//	return;
+//}
+//
+//void GetCurrentDateStr(char *DateBuffer) {
+//	time_t localTime;
+//	struct tm *stTempTime;
+//	struct tm pTm2;
+//	char CurrentDate[8 + 1];
+//
+//	localTime = time(&localTime);
+//#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
+//	struct timeval tv;
+//	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
+//#elif defined(_OS390) || defined(_OS400)
+//	stTempTime = localtime_r(&localTime, &pTm2);
+//#elif  defined(WIN32)
+//	stTempTime = localtime(&localTime);
+//
+//#endif
+//
+//
+//	sprintf((char *)CurrentDate, "%4d%02d%02d",
+//		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
+//		stTempTime->tm_min, stTempTime->tm_sec);
+//
+//	memcpy(DateBuffer, (char *)CurrentDate, sizeof(CurrentDate));
+//	return;
+//}
 
-#ifdef WIN32
-	struct _timeb timebuffer;
-	_ftime(&timebuffer);
-	usec = (long)timebuffer.millitm;
-#else
-	struct timeval stamp;
-	stamp.tv_usec = 0;
-	gettimeofday(&stamp, NULL);
-
-	usec = stamp.tv_usec / 1000;
-#endif
-
-	localTime = time(&localTime); /* Get time as long integer. */
-
-#ifdef WIN32
-	stTempTime = localtime(&localTime);
-#else
-	stTempTime = localtime_r(&localTime, &pTm2);
-#endif
-
-	sprintf(lpszDateTime
-		, "%4d%02d%02d%02d%02d%02d%03d"
-		, stTempTime->tm_year + 1900
-		, stTempTime->tm_mon + 1
-		, stTempTime->tm_mday
-		, stTempTime->tm_hour
-		, stTempTime->tm_min
-		, stTempTime->tm_sec, usec);
-
-	return lpszDateTime;
-}
-
-void GetCurrentTimeStr(char *TimeBuffer) {
-	time_t localTime;
-	struct tm *stTempTime;
-	struct tm pTm2;
-	char CurrentTime[20];
-
-	localTime = time(&localTime);
-#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
-	struct timeval tv;
-	gettimeofday(&tv, 0);
-	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
-#elif defined(_OS390) || defined(_OS400)  
-	time(&localTime);
-#elif  defined(WIN32)
-	time(&localTime);
-	stTempTime = localtime(&localTime);
-
-#endif
-
-	//	memset(CurrentTime, NULL, sizeof(CurrentTime));
-
-	sprintf((char *)CurrentTime, "%4d%02d%02d %02d%02d%02d",
-		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
-		stTempTime->tm_min, stTempTime->tm_sec);
-
-	memcpy(TimeBuffer, (char *)CurrentTime, sizeof(CurrentTime));
-	return;
-}
-
-void GetCurrentDateStr(char *DateBuffer) {
-	time_t localTime;
-	struct tm *stTempTime;
-	struct tm pTm2;
-	char CurrentDate[8 + 1];
-
-	localTime = time(&localTime);
-#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
-	struct timeval tv;
-	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
-#elif defined(_OS390) || defined(_OS400)  
-	stTempTime = localtime_r(&localTime, &pTm2);
-#elif  defined(WIN32)
-	stTempTime = localtime(&localTime);
-
-#endif
-
-
-	sprintf((char *)CurrentDate, "%4d%02d%02d",
-		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
-		stTempTime->tm_min, stTempTime->tm_sec);
-
-	memcpy(DateBuffer, (char *)CurrentDate, sizeof(CurrentDate));
-	return;
-}
-
-char* CreateVersionString(char *lpszDateTime) {
-	time_t localTime;
-	struct tm *stTempTime;
-	struct tm pTm2;
-	localTime = time(&localTime);
-
-#ifdef WIN32
-	stTempTime = localtime(&localTime);
-#else
-	stTempTime = localtime_r(&localTime, &pTm2);
-#endif
-	sprintf(lpszDateTime
-		, "%4d%02d%02d%02d%02d%02d"
-		, stTempTime->tm_year + 1900
-		, stTempTime->tm_mon + 1
-		, stTempTime->tm_mday
-		, stTempTime->tm_hour
-		, stTempTime->tm_min
-		, stTempTime->tm_sec);
-
-	return lpszDateTime;
-}
-
-char* GetSysEnv(char* ObjectName) {
-
-	if (!ObjectName)
-		return NULL;
-
-	return (getenv(ObjectName));
-}
-
-long McRandom(long Range) {
-	long r = 0;
-
-#ifdef _WIN32
-	time_t localTime;
-	//	LARGE_INTEGER start,end,frequency;
-	//	LONGLONG	m_llTimer;		
-
-	time(&localTime);
-
-	r = (long)localTime % Range;
-
-#else
-	struct timeval stamp;
-
-	stamp.tv_usec = 0;
-	gettimeofday(&stamp, NULL);
-
-	r = stamp.tv_usec % Range;
-
-#endif
-
-	return r;
-
-}
+//char* CreateVersionString(char *lpszDateTime) {
+//	time_t localTime;
+//	struct tm *stTempTime;
+//	struct tm pTm2;
+//	localTime = time(&localTime);
+//
+//#ifdef WIN32
+//	stTempTime = localtime(&localTime);
+//#else
+//	stTempTime = localtime_r(&localTime, &pTm2);
+//#endif
+//	sprintf(lpszDateTime
+//		, "%4d%02d%02d%02d%02d%02d"
+//		, stTempTime->tm_year + 1900
+//		, stTempTime->tm_mon + 1
+//		, stTempTime->tm_mday
+//		, stTempTime->tm_hour
+//		, stTempTime->tm_min
+//		, stTempTime->tm_sec);
+//
+//	return lpszDateTime;
+//}
+//
+//char* GetSysEnv(char* ObjectName) {
+//
+//	if (!ObjectName)
+//		return NULL;
+//
+//	return (getenv(ObjectName));
+//}
+//
+//long McRandom(long Range) {
+//	long r = 0;
+//
+//#ifdef _WIN32
+//	time_t localTime;
+//	//	LARGE_INTEGER start,end,frequency;
+//	//	LONGLONG	m_llTimer;
+//
+//	time(&localTime);
+//
+//	r = (long)localTime % Range;
+//
+//#else
+//	struct timeval stamp;
+//
+//	stamp.tv_usec = 0;
+//	gettimeofday(&stamp, NULL);
+//
+//	r = stamp.tv_usec % Range;
+//
+//#endif
+//
+//	return r;
+//
+//}
 
 
 /*       Check                                 */
@@ -877,159 +875,159 @@ long mIsNumeric(char *buf, long n) {
 	}
 	return (1);
 }
-unsigned char *Base64Encode(const unsigned char *str, int length, int *ret_length) {
-	const unsigned char *current = str;
-	int i = 0;
-	unsigned char *result = (unsigned char *)malloc(((length + 3 - length % 3) * 4 / 3 + 1) * sizeof(char));
-	while (length > 2) {
-		result[i++] = Base64Table[current[0] >> 2];
-		result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-		result[i++] = Base64Table[((current[1] & 0x0f) << 2) + (current[2] >> 6)];
-		result[i++] = Base64Table[current[2] & 0x3f];
+//unsigned char *Base64Encode(const unsigned char *str, int length, int *ret_length) {
+//	const unsigned char *current = str;
+//	int i = 0;
+//	unsigned char *result = (unsigned char *)malloc(((length + 3 - length % 3) * 4 / 3 + 1) * sizeof(char));
+//	while (length > 2) {
+//		result[i++] = Base64Table[current[0] >> 2];
+//		result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
+//		result[i++] = Base64Table[((current[1] & 0x0f) << 2) + (current[2] >> 6)];
+//		result[i++] = Base64Table[current[2] & 0x3f];
+//
+//		current += 3;
+//		length -= 3;
+//	}
+//
+//	if (length != 0) {
+//		result[i++] = Base64Table[current[0] >> 2];
+//		if (length > 1) {
+//			result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
+//			result[i++] = Base64Table[(current[1] & 0x0f) << 2];
+//			result[i++] = Base64Pad;
+//		}
+//		else {
+//			result[i++] = Base64Table[(current[0] & 0x03) << 4];
+//			result[i++] = Base64Pad;
+//			result[i++] = Base64Pad;
+//		}
+//	}
+//	if (ret_length) {
+//		*ret_length = i;
+//	}
+//	result[i] = '\0';
+//	return result;
+//}
 
-		current += 3;
-		length -= 3;
-	}
-
-	if (length != 0) {
-		result[i++] = Base64Table[current[0] >> 2];
-		if (length > 1) {
-			result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-			result[i++] = Base64Table[(current[1] & 0x0f) << 2];
-			result[i++] = Base64Pad;
-		}
-		else {
-			result[i++] = Base64Table[(current[0] & 0x03) << 4];
-			result[i++] = Base64Pad;
-			result[i++] = Base64Pad;
-		}
-	}
-	if (ret_length) {
-		*ret_length = i;
-	}
-	result[i] = '\0';
-	return result;
-}
-
-unsigned char *Base64Decode(const unsigned char *str, int length, int *ret_length) {
-	const unsigned char *current = str;
-	int ch, i = 0, j = 0, k;
-	static short reverse_table[BASESIZE];
-	static int table_built;
-	unsigned char *result;
-
-	if (++table_built == 1) {
-		char *chp;
-		for (ch = 0; ch < BASESIZE; ch++) {
-			chp = strchr(Base64Table, ch);
-			if (chp) {
-				reverse_table[ch] = chp - Base64Table;
-			}
-			else {
-				reverse_table[ch] = -1;
-			}
-		}
-	}
-
-	result = (unsigned char *)malloc(length + 1);
-	if (result == NULL) {
-		return NULL;
-	}
-
-	while ((ch = *current++) != '\0') {
-		if (ch == Base64Pad) break;
-		if (ch == ' ') ch = '+';
-
-		ch = reverse_table[ch];
-		if (ch < 0) continue;
-
-		switch (i % 4) {
-		case 0:
-			result[j] = ch << 2;
-			break;
-		case 1:
-			result[j++] |= ch >> 4;
-			result[j] = (ch & 0x0f) << 4;
-			break;
-		case 2:
-			result[j++] |= ch >> 2;
-			result[j] = (ch & 0x03) << 6;
-			break;
-		case 3:
-			result[j++] |= ch;
-			break;
-		}
-		i++;
-	}
-
-	k = j;
-
-	if (ch == Base64Pad) {
-		switch (i % 4) {
-		case 0:
-		case 1:
-			free(result);
-			return NULL;
-		case 2:
-			k++;
-		case 3:
-			result[k++] = 0;
-		}
-	}
-	if (ret_length) {
-		*ret_length = j;
-	}
-	result[k] = '\0';
-	return result;
-}
+//unsigned char *Base64Decode(const unsigned char *str, int length, int *ret_length) {
+//	const unsigned char *current = str;
+//	int ch, i = 0, j = 0, k;
+//	static short reverse_table[BASESIZE];
+//	static int table_built;
+//	unsigned char *result;
+//
+//	if (++table_built == 1) {
+//		char *chp;
+//		for (ch = 0; ch < BASESIZE; ch++) {
+//			chp = strchr(Base64Table, ch);
+//			if (chp) {
+//				reverse_table[ch] = chp - Base64Table;
+//			}
+//			else {
+//				reverse_table[ch] = -1;
+//			}
+//		}
+//	}
+//
+//	result = (unsigned char *)malloc(length + 1);
+//	if (result == NULL) {
+//		return NULL;
+//	}
+//
+//	while ((ch = *current++) != '\0') {
+//		if (ch == Base64Pad) break;
+//		if (ch == ' ') ch = '+';
+//
+//		ch = reverse_table[ch];
+//		if (ch < 0) continue;
+//
+//		switch (i % 4) {
+//		case 0:
+//			result[j] = ch << 2;
+//			break;
+//		case 1:
+//			result[j++] |= ch >> 4;
+//			result[j] = (ch & 0x0f) << 4;
+//			break;
+//		case 2:
+//			result[j++] |= ch >> 2;
+//			result[j] = (ch & 0x03) << 6;
+//			break;
+//		case 3:
+//			result[j++] |= ch;
+//			break;
+//		}
+//		i++;
+//	}
+//
+//	k = j;
+//
+//	if (ch == Base64Pad) {
+//		switch (i % 4) {
+//		case 0:
+//		case 1:
+//			free(result);
+//			return NULL;
+//		case 2:
+//			k++;
+//		case 3:
+//			result[k++] = 0;
+//		}
+//	}
+//	if (ret_length) {
+//		*ret_length = j;
+//	}
+//	result[k] = '\0';
+//	return result;
+//}
 #ifndef _BRMLIB
 
 
 #ifndef _TESTER
 //modified by DSKIM 2016.11.23: AES256   
-int aes_init256(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
-{
-	EVP_CIPHER_CTX_init(e_ctx);
-	EVP_EncryptInit_ex(e_ctx, EVP_aes_256_cbc(), NULL, key, iv);
-	EVP_CIPHER_CTX_init(d_ctx);
-	EVP_DecryptInit_ex(d_ctx, EVP_aes_256_cbc(), NULL, key, iv);
-
-	return 0;
-}
-int aes_init128(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
-{
-	EVP_CIPHER_CTX_init(e_ctx);
-	EVP_EncryptInit_ex(e_ctx, EVP_aes_128_cbc(), NULL, key, iv);
-	EVP_CIPHER_CTX_init(d_ctx);
-	EVP_DecryptInit_ex(d_ctx, EVP_aes_128_cbc(), NULL, key, iv);
-
-	return 0;
-}
-
-unsigned char* aes_encrypt(EVP_CIPHER_CTX* e, unsigned char* plaintext, int* len)
-{
-	int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
-	unsigned char *ciphertext = (unsigned char *)malloc(c_len);
-
-	EVP_EncryptInit_ex(e, NULL, NULL, NULL, NULL);
-	EVP_EncryptUpdate(e, ciphertext, &c_len, plaintext, *len);
-	EVP_EncryptFinal_ex(e, ciphertext + c_len, &f_len);
-
-	*len = c_len + f_len;
-	return ciphertext;
-}
-
-unsigned char* aes_decrypt(EVP_CIPHER_CTX* e, unsigned char* ciphertext, int* len)
-{
-	int p_len = *len, f_len = 0;
-	unsigned char *plaintext = (unsigned char *)malloc(p_len);
-
-	EVP_DecryptInit_ex(e, NULL, NULL, NULL, NULL);
-	EVP_DecryptUpdate(e, plaintext, &p_len, ciphertext, *len);
-	EVP_DecryptFinal_ex(e, plaintext + p_len, &f_len);
-
-	*len = p_len + f_len;
-	return plaintext;
-}
+//int aes_init256(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
+//{
+//	EVP_CIPHER_CTX_init(e_ctx);
+//	EVP_EncryptInit_ex(e_ctx, EVP_aes_256_cbc(), NULL, key, iv);
+//	EVP_CIPHER_CTX_init(d_ctx);
+//	EVP_DecryptInit_ex(d_ctx, EVP_aes_256_cbc(), NULL, key, iv);
+//
+//	return 0;
+//}
+//int aes_init128(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
+//{
+//	EVP_CIPHER_CTX_init(e_ctx);
+//	EVP_EncryptInit_ex(e_ctx, EVP_aes_128_cbc(), NULL, key, iv);
+//	EVP_CIPHER_CTX_init(d_ctx);
+//	EVP_DecryptInit_ex(d_ctx, EVP_aes_128_cbc(), NULL, key, iv);
+//
+//	return 0;
+//}
+//
+//unsigned char* aes_encrypt(EVP_CIPHER_CTX* e, unsigned char* plaintext, int* len)
+//{
+//	int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
+//	unsigned char *ciphertext = (unsigned char *)malloc(c_len);
+//
+//	EVP_EncryptInit_ex(e, NULL, NULL, NULL, NULL);
+//	EVP_EncryptUpdate(e, ciphertext, &c_len, plaintext, *len);
+//	EVP_EncryptFinal_ex(e, ciphertext + c_len, &f_len);
+//
+//	*len = c_len + f_len;
+//	return ciphertext;
+//}
+//
+//unsigned char* aes_decrypt(EVP_CIPHER_CTX* e, unsigned char* ciphertext, int* len)
+//{
+//	int p_len = *len, f_len = 0;
+//	unsigned char *plaintext = (unsigned char *)malloc(p_len);
+//
+//	EVP_DecryptInit_ex(e, NULL, NULL, NULL, NULL);
+//	EVP_DecryptUpdate(e, plaintext, &p_len, ciphertext, *len);
+//	EVP_DecryptFinal_ex(e, plaintext + p_len, &f_len);
+//
+//	*len = p_len + f_len;
+//	return plaintext;
+//}
 #endif
 #endif

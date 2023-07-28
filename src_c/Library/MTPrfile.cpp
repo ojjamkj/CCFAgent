@@ -1,8 +1,3 @@
-#if defined(__hpux) || (WIN32) || (__GNUC__)
-#include	<openssl/evp.h>
-#else
-#include	<crypto/evp.h>
-#endif
 #if	defined(WIN32)
 #define 	DEFAULT_INIFILE             "./agent.properties"
 #define 	KEY_FILE             "./key.dat"
@@ -145,21 +140,22 @@ void  CMTProfile::enc(char* lpszVal, char *lpszEncMethod)
 		fclose(fp);
 
 		int tempSize;
-		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
+//		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
+		unsigned char *key;
 		unsigned char iv[17];
         memset( iv , 0x00, sizeof(iv ));
 		strncpy((char *)iv, (char *)key, 16);
 
-		EVP_CIPHER_CTX en, de;
-		if( strcmp(lpszEncMethod,"AES256")==0 ){
-			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}else if( strcmp(lpszEncMethod,"AES128")==0 ){
-			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}
+//		EVP_CIPHER_CTX en, de;
+//		if( strcmp(lpszEncMethod,"AES256")==0 ){
+//			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}else if( strcmp(lpszEncMethod,"AES128")==0 ){
+//			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}
 
-		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
+//		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
 		int len = dec_size;
-		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
+//		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
 
 		if (key != NULL)	free(key); //2017-09-28 異붽� MEMORY AD2001
 		 
@@ -171,7 +167,7 @@ void  CMTProfile::enc(char* lpszVal, char *lpszEncMethod)
 	}
 	else if (strcmp(lpszEncMethod, "BASE64") == 0) {
 		
-			tempDec = Base64Decode((unsigned char*)lpszVal, strlen(lpszVal), &dec_size);
+//			tempDec = Base64Decode((unsigned char*)lpszVal, strlen(lpszVal), &dec_size);
 		
 			if (dec_size > 0) {
 				memset(lpszVal, 0x00, 200);

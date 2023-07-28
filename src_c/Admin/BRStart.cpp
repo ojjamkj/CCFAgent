@@ -590,12 +590,12 @@ try {
 			char tStamp[26];
 			char logMsg[100];
 
-			GetCurrentTimeStr(tStamp);
+//			GetCurrentTimeStr(tStamp);
 			//AD2001.printf("logmsgxxxx\n"  );
-			if (configRec.ulKeepFlag == 1)
-				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
-			else  
-				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
+//			if (configRec.ulKeepFlag == 1)
+//				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
+//			else
+				sprintf(logMsg, "(%02d) : %-10s : %04d", m_ulThreadNo, PgmId,  tm);
 			//AD2001.printf("logmsg (%s)\n", logMsg);
 			_WriteLog(_LOG_DAT, logMsg);
 //			_WriteLogNoIP(_LOG_DAT,m_StartIP, msg);
