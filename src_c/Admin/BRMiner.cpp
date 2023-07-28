@@ -421,7 +421,7 @@ int main(int argc, char* argv[]) {
 	configParm->ReadConfigParm(configFileName);
 #endif
 
-	printf("BRMiner Engine [%d]\n", (int) configRec.ulNoServer);
+	printf("ChangeFlow Agent [%d]\n", (int) configRec.ulNoServer);
 
 	try {
 		BuildDataStructure();

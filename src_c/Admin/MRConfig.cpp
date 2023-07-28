@@ -153,17 +153,21 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 //	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
 	 
 
-	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
-	fileIni->ReadString("cfagent", "LogMode", "", buf, 5 , false);
-	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
 
-	configRec.DBAgentCount = 3;
+//	fileIni->ReadString("cfagent", "LogMode", "", buf, 5 , false);
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+
+//	fileIni->ReadString("cfagent", "Port", DEFAULT_PORT, buf, 7, false);
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+
+//	fileIni->ReadString("cfagent", "MaxParmSize", DEFAULT_MAXPARMSIZE, buf, 20, false);
+//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+
+
+//	configRec.DBAgentCount = 3;
 //	printf("RuleMode  %s\n", configRec.RuleMode);
 //	printf("_DBTYPE %s\n", configRec._DBTYPE);
 //	printf("DBAgentCount  %d\n", configRec.DBAgentCount);
-
-
-
 
 	return 0;
 }
@@ -172,10 +176,6 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 void CONFIGPARM::DisplayConfigParm() {
 	char msg[128];
 
-//	sprintf(msg, "%s\n", configRec.lpszProdName); 
-//	sprintf(msg, "%s\n", "BRMiner 5.01 (2020.07.01) "); 
-//	sprintf(msg, "%s\n", "BRMiner 5.02 (2020.12.01) ");
-//	sprintf(msg, "%s\n", "BRMiner 5.03 (2021.06.30) ");
 	sprintf(msg, "%s\n", "ChangeFlow Agent-C 1.00 (2023.07.28) ");
 	_WriteLogNo(_LOG_LOG, msg);
 
