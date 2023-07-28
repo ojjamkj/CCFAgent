@@ -66,7 +66,10 @@ unsigned long calculateCRC32(const char *file_path);
 int createFile(char* filename, const unsigned char* data, size_t length, char *msg);
 json_t* get_file_info(const char* path, char* msg);
 void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t targetRegExp, int regExpValid, int includeMode);
-void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw);
+void get_files_info(const char* root_path, const char* dir_path, json_t *dir_info, int startRow, int currentCount, long allFileSize, char **filter_include, char **filter_ignore, int num_include, int num_ignore);
+void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore);
+bool match_filters(const char *source, char **filter_include, char **filter_ignore, int num_include, int num_ignore, bool is_case_sensitive);
+bool match(const char *source, const char *filter, bool is_case_sensitive);
 const char* get_relative_path(const char* filePath, const char* rootPath );
 char * removeSlash(char* str);
 #endif    //   __INC_MTUTIL

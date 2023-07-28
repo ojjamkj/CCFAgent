@@ -196,6 +196,76 @@ public class CAgentConnector extends AbstractConnector {
 		return resultCmd;
 	}
 	
+	public BaseCommand CMD_DOSEARCH_ONLY_FILE_COLLECT(CFAPI5J conn, HashMap param, BaseCommand cmd) {
+
+		BaseCommand resultCmd = new FileDeployCommand(); 
+		try {
+			
+			conn.WriteString( (String) param.get("TARGET_PATH") );
+			
+			conn.WriteString( (String) param.get("START_ROW") );
+			
+			ArrayList<String> list = null;
+			list = (ArrayList)param.get("INC_FILTER");
+			JSONArray include = new JSONArray();
+			for(String m: list) include.add(m);
+			
+			list = (ArrayList)param.get("EXC_FILTER");
+			JSONArray ignore = new JSONArray();
+			for(String m: list) ignore.add(m);
+			
+			conn.WriteString( include.toString());
+			conn.WriteString( ignore.toString());
+
+			
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String remoteTargetRootPath = (String)param.get("TARGET_PATH");
+					
+					String jsonstring = conn.ReadLongString();
+					if(jsonstring== null || "".equals(jsonstring)) {
+						throw new Exception("received file info is null");
+					}
+
+					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
+					int size  = viewDirList.size();
+					System.out.println("jsonstring size = " + size);
+					
+					ArrayList resultList = new ArrayList();					
+					for(int i=0; i<size; i++)
+					{
+						
+						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
+						if(fileModel != null) {
+							int fileLength = (int)fileModel.getLength();
+							System.out.println(fileModel.getPath());
+							fileModel.setFileSource(conn.ReadFileByte(fileLength));
+							resultList.add(fileModel);
+						}
+					}
+					
+					resultCmd.setResult(true, null, resultList);
+					resultCmd.setValue(ICFConstants.CMD_RESULT, "true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
+		} catch (Exception e) {
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			e.printStackTrace();
+		}
+		return resultCmd;
+	}
+	
 	public BaseCommand CMD_VIEWDIR(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 		BaseCommand resultCmd = new FileDeployCommand();
 		try {
@@ -344,12 +414,20 @@ public class CAgentConnector extends AbstractConnector {
 		try {
 			
 			conn.WriteString( (String) param.get("TARGET_PATH") );
-//			conn.WriteString( (String) param.get("INCLUDE_CHECKSUM") );
-//			conn.WriteString( (String) param.get("INCLUDE_CHECKSUM_TYPE") );
-			 
-//			inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
-//			inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
-			 
+			
+			ArrayList<String> list = null;
+			list = (ArrayList)param.get("INCLUDE_FILTER");
+			JSONArray include = new JSONArray();
+			for(String m: list) include.add(m);
+			
+			list = (ArrayList)param.get("IGNORE_FILTER");
+			JSONArray ignore = new JSONArray();
+			for(String m: list) ignore.add(m);
+			
+			conn.WriteString( include.toString());
+			conn.WriteString( ignore.toString());
+
+			
 			conn.MBRS_Run();
 			
 			boolean status = conn.ReadInt()==0 ? true:false ;
@@ -409,6 +487,7 @@ public class CAgentConnector extends AbstractConnector {
 			file.setSize( getFileSize(fileObj.getLong("size")) );
 		}
 		if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
+		if(fileObj.containsKey("errmsg")) file.setErrorMsg(fileObj.getString("errmsg"));
 		if(includeSource) file.setFileSource(conn.ReadFileByte());
 		
 		return file;
@@ -422,33 +501,48 @@ public class CAgentConnector extends AbstractConnector {
 			BaseCommand resultCmd = null;
 			conn.brexPrimary=ip;
 			conn.brexPort=port;
-			conn.Initialize("" + cmd.getCommand()); //CMD_DELETEFILE
+			
 			switch(cmd.getCommand()) {
 			case BaseCommand.CMD_AGENT_PING:
+				conn.Initialize("" + cmd.getCommand()); 
 				resultCmd = CMD_AGENT_PING(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_CREATEFILE:
+				conn.Initialize("" + cmd.getCommand()); 
 				resultCmd = CMD_CREATEFILE(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_VIEWFILE:
+				conn.Initialize("" + cmd.getCommand()); 
 				resultCmd = CMD_VIEWFILE(conn,param,cmd);
 				break;			
 			case BaseCommand.CMD_DELETEFILE:
+				conn.Initialize("" + cmd.getCommand()); 
 				resultCmd = CMD_DELTEFILE(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_DOSEARCH_ONLY_FILE:
-				resultCmd = CMD_DOSEARCH_ONLY_FILE(conn,param,cmd);
+				if(param.containsKey("INC_FILTER")) {
+					conn.Initialize("41");
+					resultCmd = CMD_DOSEARCH_ONLY_FILE_COLLECT(conn,param,cmd);
+				}else {
+					conn.Initialize("" + cmd.getCommand());
+					resultCmd = CMD_DOSEARCH_ONLY_FILE(conn,param,cmd);
+				}
+				
 				break;
 			case BaseCommand.CMD_VIEWDIR:
+				conn.Initialize("" + cmd.getCommand());
 				resultCmd = CMD_VIEWDIR(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_BUILD:
+				conn.Initialize("" + cmd.getCommand());
 				resultCmd = CMD_BUILD(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_DOSEARCH_ONLY_DIR:
+				conn.Initialize("" + cmd.getCommand());
 				resultCmd = CMD_DOSEARCH_ONLY_DIR(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_SCANDIR_TO_FILE:
+				conn.Initialize("" + cmd.getCommand());
 				resultCmd = CMD_SCANDIR_TO_FILE(conn,param,cmd);
 				break;	
 				

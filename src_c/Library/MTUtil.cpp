@@ -1,18 +1,22 @@
 #define AES_BLOCK_SIZE  32
 #define DIR_SEPARATOR '/'
+#define MAX_FILES_SIZE 50000000
 
-#include <unistd.h> // For Linux/Unix
+
+#include 	<unistd.h> // For Linux/Unix
 #include    <stdio.h>
 #include    <stdlib.h>
 #include    <string.h>
 #include 	<dirent.h>
 #include    <ctype.h>
-#include <openssl/md5.h>
-#include <openssl/sha.h>
+#include 	<openssl/md5.h>
+#include 	<openssl/sha.h>
 #include    "MTUtil.h"
-#include <sys/types.h>
-#include <sys/stat.h>
+#include 	<sys/types.h>
+#include 	<sys/stat.h>
 #include    <time.h>
+#include 	<stdbool.h>
+#include 	<regex.h>
 #ifdef		_AIX
 #include	<strings.h>
 #endif		//_AIX
@@ -70,6 +74,7 @@ json_t* get_file_info(const char* path, char* msg) {
 	json_object_set_new(file_info, "mtime", json_integer((long)fileInfo.st_mtime));
 	json_object_set_new(file_info, "read", json_integer(read));
 	json_object_set_new(file_info, "write", json_integer(write));
+	if(!read) json_object_set_new(file_info, "errmsg", json_string("can't read") );
 //	json_object_set_new(file_info, "execute", json_integer(execute));
 
 	printf("file info:  %s\n", file_info );
@@ -246,7 +251,7 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
         	json_t *file_info = json_object();
         	json_object_set_new(file_info, "filename", json_string(filename));
         	json_object_set_new(file_info, "path", json_string(path));
-        	json_object_set_new(file_info, "size", json_integer((long long)file_stat.st_size));
+        	json_object_set_new(file_info, "size", json_integer(file_stat.st_size));
         	json_object_set_new(file_info, "isdir", json_integer(dir));
         	json_object_set_new(file_info, "mtime", json_integer((long)file_stat.st_mtime));
         	json_object_set_new(file_info, "read", json_integer(read));
@@ -281,7 +286,89 @@ void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, 
 
 }
 
-void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) {
+void get_files_info(const char* root_path, const char* dir_path, json_t *dir_info, int startRow, int currentCount, long allFileSize, char **filter_include, char **filter_ignore, int num_include, int num_ignore){
+
+    DIR *dir = opendir(dir_path);
+    if (!dir) {
+        printf("Error opening directory: %s\n", dir_path);
+        return;
+    }
+
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+
+        char path[PATH_MAX];
+        //char errorMsg[200];
+        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
+        struct stat file_stat;
+        if (stat(path, &file_stat) == 0) {
+        	int dir = 0;
+        	if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+        	if(!dir && (num_include > 0 || num_ignore > 0)) {
+        		if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
+        			printf("%s : Match found.\n", path);
+        		} else {
+//        			printf("%s : No match found.\n", path);
+        			continue;
+        		}
+        	}
+
+
+        	if(!dir){
+
+        		currentCount = currentCount + 1;
+        		printf("1.currentCount: %d\n", currentCount);
+        		if( currentCount < startRow )
+        		{
+        			continue;
+        		}
+        		printf("2.currentCount: %d\n", currentCount);
+        		int filesize = (int)file_stat.st_size;
+        		printf("3.fizesize: %d\n", filesize);
+        		if( (allFileSize + filesize) >  MAX_FILES_SIZE) return;
+        		printf("4.fizesize: %d  %d\n", (allFileSize + filesize), MAX_FILES_SIZE);
+
+        		int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        		//        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+        		//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+        		const char* filename = getFileNameFromPath(path);
+
+				json_t *file_info = json_object();
+				json_object_set_new(file_info, "filename", json_string(filename));
+				json_object_set_new(file_info, "isdir", json_integer(dir));
+				json_object_set_new(file_info, "mdate", json_integer((long)file_stat.st_mtime));
+				json_object_set_new(file_info, "path", json_string(path));
+				json_object_set_new(file_info, "relpath", json_string(get_relative_path(path, root_path)));
+				json_object_set_new(file_info, "rootpath", json_string(""));
+				json_object_set_new(file_info, "read", json_integer(read));
+	//        	json_object_set_new(file_info, "write", json_integer(write));
+				json_object_set_new(file_info, "size", json_integer(file_stat.st_size));
+				if(read) {
+					allFileSize = allFileSize +  filesize;
+				}else{
+					json_object_set_new(file_info, "errmsg", json_string("can't read") );
+				}
+
+        		json_array_append_new(dir_info, file_info);
+        		printf("5.put obj\n");
+
+        	}
+
+        	if (dir) {
+        		get_files_info(root_path, path, dir_info, startRow, currentCount, allFileSize, filter_include, filter_ignore, num_include, num_ignore);
+            }
+        }
+    }
+
+    closedir(dir);
+
+}
+
+void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore) {
 
     DIR *dir = opendir(dir_path);
     if (!dir) {
@@ -303,29 +390,38 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
         	int dir = 0;
         	if (S_ISDIR(file_stat.st_mode)) dir=1;
 
-        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
-        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
-//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
-        	const char* filename = getFileNameFromPath(path);
-        	char crc32_hex_string[9];
-        	convertToHexString(crc32_hex_string, calculateCRC32(path));
-
-        	json_t *file_info = json_object();
-        	json_object_set_new(file_info, "NAME", json_string(filename));
-        	json_object_set_new(file_info, "ISDIR", json_integer(dir));
-        	json_object_set_new(file_info, "MDATE", json_integer((long)file_stat.st_mtime));
-        	json_object_set_new(file_info, "PATH", json_string(path));
-        	json_object_set_new(file_info, "RELPATH", json_string(get_relative_path(path, root_path)));
-        	json_object_set_new(file_info, "ROOTPATH", json_string(""));
-        	json_object_set_new(file_info, "READ", json_integer(read));
-        	json_object_set_new(file_info, "WRITE", json_integer(write));
-        	json_object_set_new(file_info, "SIZE", json_integer((long long)file_stat.st_size));
-        	json_object_set_new(file_info, "CHECKSUM", json_string(crc32_hex_string));
-        	json_object_set_new(file_info, "ERRMSG", json_string(path));
-//        	json_object_set_new(file_info, "execute", json_integer(execute));
-
+        	if(!dir && (num_include > 0 || num_ignore > 0)) {
+        		if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
+        			printf("%s : Match found.\n", path);
+        		} else {
+        			printf("%s : No match found.\n", path);
+        			continue;
+        		}
+        	}
 
         	if(!dir){
+        		int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+        		int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+        		//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+        		const char* filename = getFileNameFromPath(path);
+        		char crc32_hex_string[9];
+        		if(read)
+        			convertToHexString(crc32_hex_string, calculateCRC32(path));
+
+        		json_t *file_info = json_object();
+        		json_object_set_new(file_info, "NAME", json_string(filename));
+        		json_object_set_new(file_info, "ISDIR", json_integer(dir));
+        		json_object_set_new(file_info, "MDATE", json_integer((long)file_stat.st_mtime));
+        		json_object_set_new(file_info, "PATH", json_string(path));
+        		json_object_set_new(file_info, "RELPATH", json_string(get_relative_path(path, root_path)));
+        		json_object_set_new(file_info, "ROOTPATH", json_string(""));
+        		json_object_set_new(file_info, "READ", json_integer(read));
+        		json_object_set_new(file_info, "WRITE", json_integer(write));
+        		json_object_set_new(file_info, "SIZE", json_integer(file_stat.st_size));
+        		if(read) json_object_set_new(file_info, "CHECKSUM", json_string(crc32_hex_string));
+        		else json_object_set_new(file_info, "ERRMSG", json_string("can't read") );
+        		//        	json_object_set_new(file_info, "execute", json_integer(execute));
+
         		char *json_str = json_dumps(file_info, JSON_COMPACT);
         		if (json_str != NULL) {
         			fprintf(fw, "%s\n",json_str);
@@ -334,7 +430,7 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
         	}
 
         	if (dir) {
-        		scan_directory_info(root_path, path, fw);
+        		scan_directory_info(root_path, path, fw, filter_include, filter_ignore, num_include, num_ignore);
             }
         }
     }
@@ -343,6 +439,45 @@ void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw) 
 
 }
 
+bool match(const char *source, const char *filter, bool is_case_sensitive) {
+    int flags = REG_EXTENDED | REG_NOSUB;
+    if (!is_case_sensitive) {
+        flags |= REG_ICASE;
+    }
+
+    regex_t regex;
+    if (regcomp(&regex, filter, flags) != 0) {
+        return false; // Failed to compile regex
+    }
+
+    int result = regexec(&regex, source, 0, NULL, 0);
+    regfree(&regex);
+    return (result == 0);
+}
+
+// Function to match file path against a list of inclusive and exclusive filters
+bool match_filters(const char *source, char **filter_include, char **filter_ignore, int num_include, int num_ignore, bool is_case_sensitive) {
+    bool default_case = true;
+
+    if (source[strlen(source) - 1] != '/') {
+        // Check for ignore filters first
+        for (int i = 0; i < num_ignore; i++) {
+            if (match(source, filter_ignore[i], is_case_sensitive)) {
+                return false;
+            }
+        }
+    }
+
+    // Check for include filters
+    for (int i = 0; i < num_include; i++) {
+        default_case = false;
+        if (match(source, filter_include[i], is_case_sensitive)) {
+            return true;
+        }
+    }
+
+    return default_case;
+}
 
 
 const char* get_relative_path(const char* filePath, const char* rootPath ) {
@@ -417,68 +552,6 @@ unsigned long calculateCRC32(const char *file_path) {
 
     return crc;
 }
-/*#define CRC32_POLYNOMIAL 0xEDB88320
-unsigned int crc32_table[256];
-void generate_crc32_table() {
-	unsigned int crc, i, j;
-	for (i = 0; i < 256; i++) {
-		crc = i;
-		for (j = 0; j < 8; j++) {
-			if (crc & 1)
-				crc = (crc >> 1) ^ CRC32_POLYNOMIAL;
-			else
-				crc >>= 1;
-		}
-		crc32_table[i] = crc;
-	}
-}
-
-unsigned int calculate_crc(const unsigned char* data, int length) {
-	unsigned int crc = 0xFFFFFFFF;
-	int i;
-	for (i = 0; i < length; i++) {
-		crc = (crc >> 8) ^ crc32_table[(crc & 0xFF) ^ data[i]];
-	}
-	return crc ^ 0xFFFFFFFF;
-}
-
-unsigned short calculate_crc32(const char* file_path, const char* crcsum, char* error_msg) {
-	generate_crc32_table();
-	char buffer[1024];
-//	const char* file_path = "C:/cfagent/temp/AA.zip";  // 대상 파일 경로 설정
-
-	FILE* file = fopen(file_path, "rb");
-	if (file == NULL) {
-		sprintf(error_msg,"파일을 열 수 없습니다.");
-		return 1;
-	}
-
-	fseek(file, 0, SEEK_END);
-	long file_size = ftell(file);
-	fseek(file, 0, SEEK_SET);
-
-	unsigned char* file_data = (unsigned char*)malloc(file_size);
-	if (file_data == NULL) {
-		sprintf(error_msg,"메모리 할당 오류.");
-		fclose(file);
-		return 1;
-	}
-
-	fread(file_data, 1, file_size, file);
-	fclose(file);
-
-	unsigned int crc32 = calculate_crc(file_data, file_size);
-	free(file_data);
-	sprintf(buffer, "%08X", crc32);
-	if (strcmp((const char*)buffer, crcsum) == 0) {
-		return true;
-	}
-	else {
-		sprintf(error_msg, "체크섬 오류.");
-		return false;
-	}
-
-}*/
 
 char * removeSlash(char* str) {
 	for (int i = strlen(str) - 1; i >= 0; i--)
