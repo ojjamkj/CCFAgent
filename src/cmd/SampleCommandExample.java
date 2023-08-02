@@ -28,7 +28,7 @@ public class SampleCommandExample {
 		try {
 			SampleCommandExample obj = new SampleCommandExample();
 			//1.CMD_AGENT_PING
-			obj.ping();
+//			obj.ping();
 			//2.CMD_CREATEFILE
 //			obj.createFile();
 			//3.CMD_VIEWFILE
@@ -38,7 +38,7 @@ public class SampleCommandExample {
 			//5.CMD_DELETEFILE
 //			obj.deleteFile();
 			//6.CMD_DOSEARCH_ONLY_FILE
-//			obj.searchOnlyFile();
+			obj.searchOnlyFile();
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir();
 			//8.CMD_VIEWDIR
