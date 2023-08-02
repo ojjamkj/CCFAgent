@@ -1,12 +1,3 @@
-  
-#if defined(__hpux) || (WIN32) || (__GNUC__)
-#include	<openssl/evp.h>
-#else
-#include	<crypto/evp.h>
-#endif
- 
- 
-  
 #if	defined(WIN32) 
 #define		KEY_FILE	".\\key.dat"	   
 // #define		KEY_FILE	"E:\\00000000000000\\Bin\\key.dat"	   
@@ -43,11 +34,11 @@
 #include    "MRGBLVAR.h"
 
 #ifdef _MSG_KO
-#define   MSG_RULE_PARSING_ERR	 "룰(%d) : 해석 오류.  %s\n"
-#define   MSG_RULE_DATATYPE_ERR  "룰(%d) : 데이터 형태 오류.  %s\n"
-#define   MSG_RULE_PARSE_ERR1	 "룰 해석 오류 : %s\n"
-#define   MSG_RULE_PARSE_ERR2	 "룰 해석 오류 : %d %s\n"
-#define   MSG_RULE_PARSE_ERR3	 "룰 해석 오류.\n"
+#define   MSG_RULE_PARSING_ERR	 "猷�(%d) : �빐�꽍 �삤瑜�.  %s\n"
+#define   MSG_RULE_DATATYPE_ERR  "猷�(%d) : �뜲�씠�꽣 �삎�깭 �삤瑜�.  %s\n"
+#define   MSG_RULE_PARSE_ERR1	 "猷� �빐�꽍 �삤瑜� : %s\n"
+#define   MSG_RULE_PARSE_ERR2	 "猷� �빐�꽍 �삤瑜� : %d %s\n"
+#define   MSG_RULE_PARSE_ERR3	 "猷� �빐�꽍 �삤瑜�.\n"
 #else
 #define   MSG_RULE_PARSING_ERR   "Rule(%d) : Parsing error.  %s\n"
 #define   MSG_RULE_DATATYPE_ERR  "Rule(%d) : Data type error.  %s\n"
@@ -63,7 +54,7 @@ extern CONFIG_REC configRec; //added by DSKIM 2016.11.23
 //2011-01-21 vapor decode  
 void CMRLoadData::DecodeString( char * enc , char * lpszVal)
 { 
-	//modified by DSKIM 2016.11.23: AES256 적용
+	//modified by DSKIM 2016.11.23: AES256 �쟻�슜
 	/*
     int dec_size;
     unsigned char *tempDec;
@@ -93,26 +84,27 @@ void CMRLoadData::DecodeString( char * enc , char * lpszVal)
 		}
 		fclose(fp);
 		int tempSize;
-		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
+		unsigned char *key;
+//		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
 		unsigned char iv[17];
         memset( iv , 0x00, sizeof(iv ));
 		strncpy((char *)iv, (char *)key, 16 );
 
-		EVP_CIPHER_CTX en , de  ;
+//		EVP_CIPHER_CTX en , de  ;
 
-		if( strcmp(configRec.lpszEncMethod,"AES256")==0 ){
-			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}else if( strcmp(configRec.lpszEncMethod,"AES128")==0 ){
-			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}
+//		if( strcmp(configRec.lpszEncMethod,"AES256")==0 ){
+//			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}else if( strcmp(configRec.lpszEncMethod,"AES128")==0 ){
+//			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}
 
-		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
+//		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
 //printf("Prfile 01 enc[%s] [%s ][%s]\n ",enc, lpszVal, tempDec);		
 		int len = dec_size;
-		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
+//		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
 //printf("Prfile 02 [%s]\n ", tempDec);		
 	} else if ( strcmp(configRec.lpszEncMethod,"BASE64")==0) {
-		tempDec = Base64Decode((unsigned char *)enc,strlen((const char*)enc), &dec_size);
+//		tempDec = Base64Decode((unsigned char *)enc,strlen((const char*)enc), &dec_size);
 	}
 	/*
 	if(configRec.lpszEncMethod[0] == 'A') {
@@ -171,13 +163,13 @@ VALUE_UNION * CMRLoadData::buildDefaultResult(char *pExpress, RULE_LIST *pRule,
     if (*gbn < 0)
         return (VALUE_UNION *) 0;
 
-    if (*gbn == 0) { //  룰,아이템이 포함된 구성
+    if (*gbn == 0) { //  猷�,�븘�씠�뀥�씠 �룷�븿�맂 援ъ꽦
         return (VALUE_UNION *) pStmt;
     }
 
     return pResValue;
 
-    /*  MEMORY Free하지 않아도 부담 없음
+    /*  MEMORY Free�븯吏� �븡�븘�룄 遺��떞 �뾾�쓬
 
      CRULE_STMT *p, *q;
      int len;
@@ -227,12 +219,12 @@ VALUE_UNION * CMRLoadData::buildResultRec(CRULE_STMT *pStmt, RULE_LIST *pRule,
     return pResValue;
 }
 
-//  0:Rule,Item포함  1:상수Only  2:Array  3:2차원Array(후에 2로바뀜)  -1:Error
+//  0:Rule,Item�룷�븿  1:�긽�닔Only  2:Array  3:2李⑥썝Array(�썑�뿉 2濡쒕컮��)  -1:Error
 int CMRLoadData::getResulRecType(CRULE_STMT *pStmt, RULE_LIST *pRule) {
     CRULE_STMT *p;
     bool bCheck = 1;
 
-    //  2 expression이상.   상수형인지 체크
+    //  2 expression�씠�긽.   �긽�닔�삎�씤吏� 泥댄겕
     p = pStmt;
     while (p) {
         if (!p->pNext)
@@ -278,7 +270,7 @@ int CMRLoadData::getResulRecType(CRULE_STMT *pStmt, RULE_LIST *pRule) {
             break;
         default:
             bArray = 0;
-            break; //  기타 토큰이면 Array형 아님
+            break; //  湲고� �넗�겙�씠硫� Array�삎 �븘�떂
         }
 
         if (!bArray)
@@ -307,7 +299,7 @@ int CMRLoadData::setResultValue(int retType, CRULE_STMT *p, VALUE_UNION *val) {
             val->dblVal = 0.0;
         break;
     case TOKENTYPE_CONST_C:
-        // 2010-4-15 vapor 형체크 안함.
+        // 2010-4-15 vapor �삎泥댄겕 �븞�븿.
         //if ( p->tokType != TOKENTYPE_CONST_C && p->tokType != TOKENTYPE_CONST_L ) return -1;
 				memset( val->strVal,0x00, STR_VALUE_SIZE );
         if (p->uni.tokInfo) {
@@ -317,7 +309,7 @@ int CMRLoadData::setResultValue(int retType, CRULE_STMT *p, VALUE_UNION *val) {
         break;
 
     case TOKENTYPE_CONST_L:
-        // 2010-4-15 vapor 형체크 안함.
+        // 2010-4-15 vapor �삎泥댄겕 �븞�븿.
         //if ( p->tokType != TOKENTYPE_CONST_C && p->tokType != TOKENTYPE_CONST_L ) return -1;
 
         if (p->uni.tokInfo) {
@@ -683,23 +675,23 @@ void CMRLoadData::ParseQueryRule(QRULE_DATA *pQRule, char *source) {
             continue;
         }
 
-        if (*pSource == '-' && *(pSource + 1) == '-') {  // Line끝까지 주석
+        if (*pSource == '-' && *(pSource + 1) == '-') {  // Line�걹源뚯� 二쇱꽍
             while (*pSource && *pSource != '\n') {
                 pSource++;
             }
             continue;
         }
  
-        while ((*pSource && *pSource == '\n') && (*(pSource+1) && *(pSource+1) == '\n') ) { // \n\n 일경우 제거   2014-11-06 ad2001
+        while ((*pSource && *pSource == '\n') && (*(pSource+1) && *(pSource+1) == '\n') ) { // \n\n �씪寃쎌슦 �젣嫄�   2014-11-06 ad2001
                     pSource++;
         }
 
-		if ((*pSource && *pSource == '/') &&(*(pSource+1) && *(pSource + 1) == '*') ) { //   주석 Hint위해 살려둠
- //           tempStr[i++] = *pSource++; //주석처리 dskim
- //           tempStr[i++] = *pSource++; //주석처리 dskim
+		if ((*pSource && *pSource == '/') &&(*(pSource+1) && *(pSource + 1) == '*') ) { //   二쇱꽍 Hint�쐞�빐 �궡�젮�몺
+ //           tempStr[i++] = *pSource++; //二쇱꽍泥섎━ dskim
+ //           tempStr[i++] = *pSource++; //二쇱꽍泥섎━ dskim
 
-			//modified by DSKiM 2015.07.09: 주석 처리 해제함
-            if ((*(pSource+2) && *(pSource+2) != '+')) { //   / * + 힌트절이 아니면 제거 2014-11-06 ad2001
+			//modified by DSKiM 2015.07.09: 二쇱꽍 泥섎━ �빐�젣�븿
+            if ((*(pSource+2) && *(pSource+2) != '+')) { //   / * + �엺�듃�젅�씠 �븘�땲硫� �젣嫄� 2014-11-06 ad2001
                 *pSource++;
                 *pSource++;
                 while (*pSource ) {
@@ -715,9 +707,9 @@ void CMRLoadData::ParseQueryRule(QRULE_DATA *pQRule, char *source) {
             }else{
                 tempStr[i++] = *pSource++;
                 tempStr[i++] = *pSource++;
-            } // 이 라인까지 주석처리 해제함                                    
+            } // �씠 �씪�씤源뚯� 二쇱꽍泥섎━ �빐�젣�븿
 
-			//modified by DSKIM 2015.07.09:  주석 처리함
+			//modified by DSKIM 2015.07.09:  二쇱꽍 泥섎━�븿
 			/*
 			/*
             while (*pSource) {
@@ -729,9 +721,9 @@ void CMRLoadData::ParseQueryRule(QRULE_DATA *pQRule, char *source) {
 
                 tempStr[i++] = *pSource++;
             }
-            continue; */ //이 라인까지 주석처리함
-			//modified by DSKIM 2015.12.08 -- continue를 막으면 바인딩 변수에 외부입력변수 또는 내부입력변수 처리가 안됨
-			// continue를 다시 살렸음
+            continue; */ //�씠 �씪�씤源뚯� 二쇱꽍泥섎━�븿
+			//modified by DSKIM 2015.12.08 -- continue瑜� 留됱쑝硫� 諛붿씤�뵫 蹂��닔�뿉 �쇅遺��엯�젰蹂��닔 �삉�뒗 �궡遺��엯�젰蹂��닔 泥섎━媛� �븞�맖
+			// continue瑜� �떎�떆 �궡�졇�쓬
 			continue;
         }
 
@@ -739,9 +731,9 @@ void CMRLoadData::ParseQueryRule(QRULE_DATA *pQRule, char *source) {
 /*		else {
 			tempStr[i++] = *pSource++;
 			continue;
-		}//// */ //추가 후에 변수 처리 오류가 있어 주석 처리함 2015.07.10
+		}//// */ //異붽� �썑�뿉 蹂��닔 泥섎━ �삤瑜섍� �엳�뼱 二쇱꽍 泥섎━�븿 2015.07.10
 
-/*         if (*(pSource+2) && *(pSource+2) != '+') { //   /*+ 힌트절이 아니면 제거 2014-11-06 ad2001
+/*         if (*(pSource+2) && *(pSource+2) != '+') { //   /*+ �엺�듃�젅�씠 �븘�땲硫� �젣嫄� 2014-11-06 ad2001
                 pSource++;
                 pSource++;
                 pSource++;
@@ -921,7 +913,7 @@ QBRULE_SUBSTR * CMRLoadData::ParseBranchRule(char *source) {
     return pRoot;
 }
 
-// 2010-2-10 vapor 주석문 처리함수 2010-2-24 여기로 이동
+// 2010-2-10 vapor 二쇱꽍臾� 泥섎━�븿�닔 2010-2-24 �뿬湲곕줈 �씠�룞
 int CMRLoadData::FindComments(char * line) {
     const char comment[] = "--";
 
@@ -932,18 +924,18 @@ int CMRLoadData::FindComments(char * line) {
 
     int i;
 
-    //구분자 [n][0] 과 [n][1] 사이에 들어가면 주석아님
+    //援щ텇�옄 [n][0] 怨� [n][1] �궗�씠�뿉 �뱾�뼱媛�硫� 二쇱꽍�븘�떂
     char delimiter[5][2] =
             { '(', ')', '{', '}', '[', ']', '\'', '\'', '"', '"' };
 
     while (pos) {
-        // comment 위치가 괄호나 따옴표안에 있는지 검사.
+        // comment �쐞移섍� 愿꾪샇�굹 �뵲�샂�몴�븞�뿉 �엳�뒗吏� 寃��궗.
 
         for (i = 0; i < 5; i++) {
-            // 여는것이 주석문 앞일 경우에만
+            // �뿬�뒗寃껋씠 二쇱꽍臾� �븵�씪 寃쎌슦�뿉留�
             if ((open = strchr(line, delimiter[i][0])) != NULL) {
                 if (open < pos) {
-                    // 구분자안에 들어갈 경우 주석문 아님.
+                    // 援щ텇�옄�븞�뿉 �뱾�뼱媛� 寃쎌슦 二쇱꽍臾� �븘�떂.
                     if (((close = strrchr(line, delimiter[i][1])) != NULL)
                             && open < pos && pos < close)
                         break;
@@ -951,9 +943,9 @@ int CMRLoadData::FindComments(char * line) {
             }
         }
 
-        // 구분자안에 들지 않을 경우 주석문
+        // 援щ텇�옄�븞�뿉 �뱾吏� �븡�쓣 寃쎌슦 二쇱꽍臾�
         if (i == 5) {
-            // 공백문자로만 이루어져 있을경우 이을 필요 없음.
+            // 怨듬갚臾몄옄濡쒕쭔 �씠猷⑥뼱�졇 �엳�쓣寃쎌슦 �씠�쓣 �븘�슂 �뾾�쓬.
             int size = pos - line;
             for (i = 0; i < pos - line; i++) {
                 if (line[i] != ' ')
@@ -963,17 +955,17 @@ int CMRLoadData::FindComments(char * line) {
             return 0;
         }
 
-        // 다음 주석기호
+        // �떎�쓬 二쇱꽍湲고샇
         if (pos + 2 >= line + size)
             break;
         pos = strstr(pos + 2, comment);
     }
 
-    // 주석문이 포함되지 않았을 경우
+    // 二쇱꽍臾몄씠 �룷�븿�릺吏� �븡�븯�쓣 寃쎌슦
     return strlen(line);
 }
 
-// 2010-2-10 vapor 주석문 처리함수 2010-2-24 여기로 이동
+// 2010-2-10 vapor 二쇱꽍臾� 泥섎━�븿�닔 2010-2-24 �뿬湲곕줈 �씠�룞
 char* CMRLoadData::RemoveComments(char* orgSql) {
     char saveSql[MAX_QUERY_SIZE]=""; //MItem.h 30000 MAX_QUERY_SIZE[MAX_QUERY_SIZE] = "";
     strcpy(saveSql, orgSql);
@@ -985,11 +977,11 @@ char* CMRLoadData::RemoveComments(char* orgSql) {
 
     char * line = strtok(saveSql, linetok);
 
-    // line 별로 나눈다.
+    // line 蹂꾨줈 �굹�늿�떎.
     while (line != NULL) {
-        // line 에서 유효한 문자갯수 찾는다.
+        // line �뿉�꽌 �쑀�슚�븳 臾몄옄媛��닔 李얜뒗�떎.
         if ((validsize = FindComments(line)) > 0) {
-            // 개행문자는 들어가야 하므로
+            // 媛쒗뻾臾몄옄�뒗 �뱾�뼱媛��빞 �븯誘�濡�
             line[validsize] = '\n';
             strncat(orgSql, line, validsize + 1);
         }
@@ -997,7 +989,7 @@ char* CMRLoadData::RemoveComments(char* orgSql) {
         line = strtok(NULL, linetok);
     }
 
-    // 2010-2-25 vapor 마지막 탭 , 개행, 공백문자와 세미콜론 없앤다. 세미콜론 넘어가면 sql 에러남.
+    // 2010-2-25 vapor 留덉�留� �꺆 , 媛쒗뻾, 怨듬갚臾몄옄�� �꽭誘몄퐳濡� �뾾�븻�떎. �꽭誘몄퐳濡� �꽆�뼱媛�硫� sql �뿉�윭�궓.
     for (int i = strlen(orgSql) - 1; i >= 0; i--) {
         if (orgSql[i] != ' ' && orgSql[i] != ';' && orgSql[i] != '\n'
                 && orgSql[i] != '\r' && orgSql[i] != '\t')
@@ -1012,7 +1004,7 @@ char* CMRLoadData::RemoveComments(char* orgSql) {
 /*
  QBRULE_SUBSTR * CMRLoadData::ParseBnQRule( char *source )
  {
- // 2010-2-24 vapor 주석문 없애고 쿼리문 마지막에 붙은 이거저거 랑 세미콜론 없앤다.
+ // 2010-2-24 vapor 二쇱꽍臾� �뾾�븷怨� 荑쇰━臾� 留덉�留됱뿉 遺숈� �씠嫄곗�嫄� �옉 �꽭誘몄퐳濡� �뾾�븻�떎.
  source = RemoveComments(source);
 
 

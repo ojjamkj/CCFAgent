@@ -67,7 +67,7 @@ typedef struct {
 	char		_DBTYPE[21];
 	char		_DBCONNINFO[501];
 	unsigned long	_DBPORT;
-
+	char		startTime[80];
 
 	
 } CONFIG_REC;
@@ -98,3 +98,5 @@ extern int  MtsLoadDebugLevel;
 #endif
 
 #endif      //_INC_MRCONFIG
+
+#define CHANGEFLOW_VERSION "1.0.0.013"

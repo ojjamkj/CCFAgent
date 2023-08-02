@@ -50,7 +50,7 @@ CBREXLog::CBREXLog() :
 		tempName[len] = PATH_DELIM;
 		tempName[len + 1] = 0;
 	}
-	sprintf(m_fName, "%sBREX%02d", tempName, (int) configRec.ulNoServer);
+	sprintf(m_fName, "%sAgent%02d", tempName, (int) configRec.ulNoServer);
 
 	/*****************************************************************/
 

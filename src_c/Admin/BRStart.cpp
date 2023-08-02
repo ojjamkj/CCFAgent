@@ -257,9 +257,7 @@ void CCSThread::ProcessRequest() {
 
 	m_bUsing = 0;
 }
-void listDirectories(const char* path) {
-	
-}
+
 long CCSThread::MainProcess(char *startIp) {
 	char PgmId[100];
 	bool bTrace = 0;	
@@ -307,6 +305,12 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
+	if (strcmp(PgmId, "41") == 0) {
+		cfapi.API41_DOSEARCH_ONLY_FILE_COLLECT(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
+		ReplyResultSet();
+		return 0;
+	}
+
 	if (strcmp(PgmId, "28") == 0) {
 		cfapi.API28_DELETEFILE(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
 		ReplyResultSet();
@@ -317,23 +321,6 @@ long CCSThread::MainProcess(char *startIp) {
 		ReplyResultSet();
 		return 0;
 	}
-
-	/*
-	if (strcmp(PgmId, "26") == 0) {
-		cfapi.API01(&m_ObjBuffer, m_itemCnt, m_pChildSoc,(CCSManager*)m_pManager);
-		ReplyResultSet();
-		return 0;
-	}
-	if (strcmp(PgmId, "27") == 0) {
-		cfapi.API27(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
-		ReplyResultSet();
-		return 0;
-	}
-	if (strcmp(PgmId, "100") == 0) {
-		cfapi.API100(&m_ObjBuffer, m_itemCnt, m_pChildSoc, (CCSManager*)m_pManager);
-	//	ReplyResultSet();
-		return 0;
-	}*/
 
 	PGM_LIST *pPgmNode;
 	memset(PgmId,0x00,21);
@@ -584,12 +571,12 @@ try {
 			char tStamp[26];
 			char logMsg[100];
 
-			GetCurrentTimeStr(tStamp);
+//			GetCurrentTimeStr(tStamp);
 			//AD2001.printf("logmsgxxxx\n"  );
-			if (configRec.ulKeepFlag == 1)
-				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
-			else  
-				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
+//			if (configRec.ulKeepFlag == 1)
+//				sprintf(logMsg, "(%02d) %s : %-10s : %04d", m_ulThreadNo,tStamp, PgmId,  tm);
+//			else
+				sprintf(logMsg, "(%02d) : %-10s : %04d", m_ulThreadNo, PgmId,  tm);
 			//AD2001.printf("logmsg (%s)\n", logMsg);
 			_WriteLog(_LOG_DAT, logMsg);
 //			_WriteLogNoIP(_LOG_DAT,m_StartIP, msg);

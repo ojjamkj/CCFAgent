@@ -1,16 +1,11 @@
-#if defined(__hpux) || (WIN32) || (__GNUC__)
-#include	<openssl/evp.h>
-#else
-#include	<crypto/evp.h>
-#endif
 #if	defined(WIN32)
-#define 	DEFAULT_INIFILE             "./BRMCONF.ini"
+#define 	DEFAULT_INIFILE             "./agent.properties"
 #define 	KEY_FILE             "./key.dat"
 
 #elif defined(_OS390) || defined(_ZOS)
 #define DEFAULT_INIFILE             "DD:BRMCONF"
 #else
-#define DEFAULT_INIFILE             "./BRMCONF.ini"
+#define DEFAULT_INIFILE             "./agent.properties"
 #define 	KEY_FILE             "./key.dat"
 #endif
 
@@ -47,7 +42,7 @@
 #endif
 
 #ifdef _MSG_KO
-#define     MSG_FILEOPEN_ERR  "파일 열기 오류.(%s)\n"
+#define     MSG_FILEOPEN_ERR  "파일을 열수 없습니다.\n"
 #else
 #define     MSG_FILEOPEN_ERR   "File open error.(%s)\n"
 #endif
@@ -116,14 +111,14 @@ long CMTProfile::ReadLong(const char* lpszSection, const char* lpszEntry,
 #ifndef _TESTER
 void  CMTProfile::enc(char* lpszVal, char *lpszEncMethod)
 {
-	//modified by DSKIM 2016.11.23: AES256 적용
+	//modified by DSKIM 2016.11.23: AES256 �쟻�슜
 	/*
 	int dec_size = 0;
 	unsigned char * tempDec;
 	tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
 	// if decoded
 	if (dec_size > 0) {
-		memset(lpszVal, 0x00, 200); //200으로 선언했음.
+		memset(lpszVal, 0x00, 200); //200�쑝濡� �꽑�뼵�뻽�쓬.
 		memcpy(lpszVal, tempDec, dec_size);
 	}
 	if (tempDec != NULL)
@@ -145,23 +140,24 @@ void  CMTProfile::enc(char* lpszVal, char *lpszEncMethod)
 		fclose(fp);
 
 		int tempSize;
-		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
+//		unsigned char *key = Base64Decode((unsigned char *)tempKey ,strlen(tempKey), &tempSize);
+		unsigned char *key;
 		unsigned char iv[17];
         memset( iv , 0x00, sizeof(iv ));
 		strncpy((char *)iv, (char *)key, 16);
 
-		EVP_CIPHER_CTX en, de;
-		if( strcmp(lpszEncMethod,"AES256")==0 ){
-			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}else if( strcmp(lpszEncMethod,"AES128")==0 ){
-			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
-		}
+//		EVP_CIPHER_CTX en, de;
+//		if( strcmp(lpszEncMethod,"AES256")==0 ){
+//			aes_init256((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}else if( strcmp(lpszEncMethod,"AES128")==0 ){
+//			aes_init128((unsigned char *)key, (unsigned char *)iv, &en, &de);
+//		}
 
-		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
+//		tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
 		int len = dec_size;
-		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
+//		tempDec = (unsigned char *)aes_decrypt(&de, tempDec, &len);
 
-		if (key != NULL)	free(key); //2017-09-28 추가 MEMORY AD2001
+		if (key != NULL)	free(key); //2017-09-28 異붽� MEMORY AD2001
 		 
 		if (len > 0) {
 			memset(lpszVal, 0x00, 200);
@@ -171,7 +167,7 @@ void  CMTProfile::enc(char* lpszVal, char *lpszEncMethod)
 	}
 	else if (strcmp(lpszEncMethod, "BASE64") == 0) {
 		
-			tempDec = Base64Decode((unsigned char*)lpszVal, strlen(lpszVal), &dec_size);
+//			tempDec = Base64Decode((unsigned char*)lpszVal, strlen(lpszVal), &dec_size);
 		
 			if (dec_size > 0) {
 				memset(lpszVal, 0x00, 200);
@@ -305,13 +301,13 @@ const char* CMTProfile::ReadString(const char* lpszSection,
  
 
 			if (enc) {
-				//modified by DSKIM 2016.11.23: ��용하지 �����로 주석 처리�
+				//modified by DSKIM 2016.11.23: 占쏙옙�슜�븯吏� 占쏙옙占쏙옙占쎈줈 二쇱꽍 泥섎━占�
 				/ *
 				int dec_size = 0;
 				tempDec = Base64Decode((unsigned char*) lpszVal,strlen(lpszVal), &dec_size);
 				// if decoded
 				if (dec_size > 0) {
-					memset(lpszVal, 0x00, 200); // 200��� ���했��.
+					memset(lpszVal, 0x00, 200); // 200占쏙옙占� 占쏙옙占쏀뻽占쏙옙.
 					memcpy(lpszVal, tempDec, dec_size);
 				}
 				if (tempDec != NULL)
@@ -327,13 +323,13 @@ const char* CMTProfile::ReadString(const char* lpszSection,
 		strncpy(lpszVal, lpszDefault, lLength - 1);
 		lpszVal[lLength - 1] = '\0';
 		if (enc) {
-			//modified by DSKIM 2016.11.23:  사용하지 않으므로 주석 처리함
+			//modified by DSKIM 2016.11.23:  �궗�슜�븯吏� �븡�쑝誘�濡� 二쇱꽍 泥섎━�븿
 			/ *
 			int dec_size = 0;
 			tempDec = Base64Decode((unsigned char*) lpszVal, strlen(lpszVal),&dec_size);
 			// if decoded
 			if (dec_size > 0) {
-				memset(lpszVal, 0x00, 200); // 200으로 선언했음.
+				memset(lpszVal, 0x00, 200); // 200�쑝濡� �꽑�뼵�뻽�쓬.
 				memcpy(lpszVal, tempDec, dec_size);
 			}
 

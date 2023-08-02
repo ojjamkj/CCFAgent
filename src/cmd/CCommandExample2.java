@@ -56,13 +56,13 @@ public class CCommandExample2 {
 //			inHash.put("TARGET_PORT", "30502");
 			inHash.put("CONNECT_TYPE", "B");
 			inHash.put("MACHINE_TYPE", "S");
-			
+			long start = System.currentTimeMillis();
 			CCommandExample2 obj = new CCommandExample2();
 			//1.CMD_AGENT_PING
 // 			obj.ping(inHash); 			// 일부처리
 			//2.CMD_CREATEFILE
 //			obj.createFile(inHash);		// 일부처리0
-//			obj.createMultiFile(new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
+//			obj.createMultiFile(inHash, new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
 			//3.CMD_VIEWFILE
 //			obj.viewFile(inHash); 		// 일부처리
 			//4.CMD_BUILD
@@ -71,13 +71,17 @@ public class CCommandExample2 {
 //			obj.deleteFile();  		// 일부처리
 			//6.CMD_DOSEARCH_ONLY_FILE
 //			obj.searchOnlyFile(inHash);
+			//6.CMD_DOSEARCH_ONLY_FILE
+			obj.searchOnlyFileCollector(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR
 //			obj.viewDir(inHash);
 			//9.CMD_SCANDIR_TO_FILE		
-			obj.scanToFile(inHash);
-
+//			obj.scanToFile(inHash);
+			long end = System.currentTimeMillis();
+			
+			System.out.println(end-start);
 		}catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -264,6 +268,57 @@ public class CCommandExample2 {
 	}
 	
 	
+	public void searchOnlyFileCollector(HashMap inHash) throws Exception
+	{
+		ArrayList includeFilter = new ArrayList();
+//		includeFilter.add(FileManager.getMatchedRegExp("**.java"));
+		ArrayList ignoreFilter = new ArrayList();
+//		ignoreFilter.add(FileManager.getMatchedRegExp("**.bak"));
+		inHash.put("TARGET_PATH", "/home/cf/tofile/GapMiner"); //가져올 파일 수집 최상위 경로
+		inHash.put("INC_FILTER", includeFilter); 
+		inHash.put("EXC_FILTER", ignoreFilter); 
+		
+		int fileCount = 0;
+		int currentSize = 0;
+		ArrayList fileList = new ArrayList();
+		do
+		{	
+			inHash.put("START_ROW", ""+fileCount); //시작위치
+			
+			BaseCommand cmd = new FileDeployCommand( BaseCommand.CMD_DOSEARCH_ONLY_FILE );
+			cmd.setCommandType(BaseCommand.CMD_TYPE_DEPLOY);
+			cmd.setValue(ICFConstants.HASHMAP, inHash);
+			cmd.setMultiple(false);
+			
+			//여기서 
+			BaseCommand resultCmd = remoteCmdRun(inHash, inHash, cmd);
+			if( !resultCmd.isSuccess() )
+				throw new Exception( resultCmd.getErrorMessage() );
+			else {
+				ArrayList<FileModel> files = (ArrayList<FileModel>)resultCmd.getResultData();
+				for(FileModel fileModel : files)
+				{
+					if(fileModel.getErrorMsg() != null && !"".equals(fileModel.getErrorMsg() )) {
+						System.out.println(fileModel.getPath() + ": " + fileModel.getErrorMsg());
+						continue;
+					}
+					
+					FileManager.createFile(fileModel.getFileSource(), fileModel.getPath().replaceAll("/home/cf/tofile","D:/temp/ttt"));
+					
+					if(fileList.contains(fileModel.getPath())) {
+						System.out.println("dup: " + fileModel.getPath());
+					}else {
+						fileList.add(fileModel.getPath());
+					}
+				}
+				currentSize = files.size();
+				fileCount += currentSize;
+				
+			}
+		}while(currentSize > 0);
+	}
+	
+	
 	public void searchOnlyDir(HashMap inHash) throws Exception
 	{
 		
@@ -332,13 +387,13 @@ public class CCommandExample2 {
 	public void scanToFile(HashMap inHash) throws Exception
 	{
 		ArrayList includeFilter = new ArrayList();
-		includeFilter.add("/*.java");
+//		includeFilter.add(FileManager.getMatchedRegExp("**.vm"));
 		ArrayList ignoreFilter = new ArrayList();
-		ignoreFilter.add("**.bak");
+//		ignoreFilter.add(FileManager.getMatchedRegExp("**.bak"));
 		
 		inHash.put("TARGET_PATH", "/home/cf/tofile"); 
-		inHash.put("INCLUDE_FILTER", new ArrayList()); //옵션
-		inHash.put("IGNORE_FILTER", new ArrayList()); //옵션		
+		inHash.put("INCLUDE_FILTER", includeFilter); //옵션
+		inHash.put("IGNORE_FILTER", ignoreFilter); //옵션		
 		inHash.put("INCLUDE_CHECKSUM", "Y"); //체크썸 포함 여부
 		inHash.put("INCLUDE_CHECKSUM_TYPE", "CRC"); //검색 정규식, 옵션
 		

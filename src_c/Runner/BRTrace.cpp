@@ -183,7 +183,7 @@ bool CBRTrace::isTrace(char *PgmId, void *p, char *dt) {
 			dt[8] = 0;
 		}else{
 //			strcpy(pData->m_TraceID,"00000000");
-		  DetailTimeStamp( pData->m_TraceID );
+//		  DetailTimeStamp( pData->m_TraceID );
 		}
 		return true;
 	}
