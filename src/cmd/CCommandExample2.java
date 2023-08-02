@@ -51,7 +51,7 @@ public class CCommandExample2 {
 		try {
 			HashMap inHash = new HashMap();
 			inHash.put("TARGET_IP", "172.16.15.15");
-			inHash.put("TARGET_PORT", "30502");
+			inHash.put("TARGET_PORT", "30503");
 //			inHash.put("TARGET_IP", "127.0.0.1");
 //			inHash.put("TARGET_PORT", "30502");
 			inHash.put("CONNECT_TYPE", "B");
@@ -59,7 +59,7 @@ public class CCommandExample2 {
 			long start = System.currentTimeMillis();
 			CCommandExample2 obj = new CCommandExample2();
 			//1.CMD_AGENT_PING
-// 			obj.ping(inHash); 			// 일부처리
+ 			obj.ping(inHash); 			// 일부처리
 			//2.CMD_CREATEFILE
 //			obj.createFile(inHash);		// 일부처리0
 //			obj.createMultiFile(inHash, new File("D:/50_INSTALL/SampleBiz/dev/MediaHub_CCI"));		// 일부처리0
@@ -72,7 +72,7 @@ public class CCommandExample2 {
 			//6.CMD_DOSEARCH_ONLY_FILE
 //			obj.searchOnlyFile(inHash);
 			//6.CMD_DOSEARCH_ONLY_FILE
-			obj.searchOnlyFileCollector(inHash);
+//			obj.searchOnlyFileCollector(inHash);
 			//7.CMD_DOSEARCH_ONLY_DIR
 //			obj.searchOnlyDir(inHash);
 			//8.CMD_VIEWDIR

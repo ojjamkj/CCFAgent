@@ -624,16 +624,15 @@ public class CFAPI5J {
 		return new Date().getTime();
 	}
 
-	private synchronized int Calling(int svrIndex, int portIndex, boolean errmsg) {
+	private synchronized int Calling(int svrIndex, int portIndex, boolean errmsg) throws Exception {
 		try {
 //System.out.println("Calling:"+brexPrimary+":"+brexPort);			
 			this.clientSock = OpenSocket();
 			if( clientSock!=null)return 0;
 			else return -1;
 		}catch(Exception e) {
-			e.printStackTrace();
+			throw(e);
 		}
-		return -1;
 	}
 	public synchronized int MBRS_conn()throws Exception{
 		int status=-1;
@@ -662,11 +661,13 @@ public class CFAPI5J {
 		if( isDebug ) {
 			time1=System.currentTimeMillis();
 		}
-		if (MBRS_conn() != 0L) {
-			socketClose(0);
-			throw new Exception(this.errorMessage);
-			// return false;
+		try {
+			MBRS_conn();
+		}catch(Exception e) {
+			socketClose(1);
+			throw(e);
 		}
+		
 		if( isDebug ) {
 			time2=System.currentTimeMillis();
 			System.out.println("\tConnection:Time ("+(time2-time1 )+" )");
@@ -814,12 +815,14 @@ public class CFAPI5J {
 				socketOpenCount += 1;
 		 }catch (Exception e) {
 				clientSocktemp=null;
+				throw(e);
 		}finally{
-			if( clientSocktemp!=null){
-				ins = clientSocktemp.getInputStream();
-			}
-			return clientSocktemp;
+//			if( clientSocktemp!=null){
+//				ins = clientSocktemp.getInputStream();
+//			}
+			
 		}
+		 return clientSocktemp;
 	}
 	
 //	public synchronized Socket OpenSocketABL(String Ip, int port) throws Exception {

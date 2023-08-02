@@ -2,6 +2,7 @@
 //
 #include	<string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #if !defined(_OS400) 
 #include	"MTPrfile.h"
 #endif
@@ -124,11 +125,12 @@ char decode_log_ch(char x) {
 
  
 int CONFIGPARM::ReadConfigParm(char *fileName) {
- 
+	printf("config filename: [%s]\n", fileName);
 	_DEBUG_YN[0] = 'Y'; _DEBUG_YN[1] = 0; 
 
 	fileIni = new CMTProfile(fileName);
 	strcpy(configRec.configFile, fileName);
+	printf("config filename: [%s]\n", configRec.configFile);
 	char buf[100];
 	if (!fileIni->FileOpenCheck()) {
 		//printf("File Open Error : %s\n", fileName);
@@ -139,6 +141,8 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 	  
 
 	fileIni->ReadString("cfagent", "DEBUG", "N", _DEBUG_YN, 2, false);
+
+	printf("config filename: DEBUG[%s]\n", _DEBUG_YN);
  
 	if (_DEBUG_YN[0] == 'Y') {
 		printf("004==>%s\n", fileName);
@@ -162,9 +166,14 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 
 //	fileIni->ReadString("cfagent", "LogMode", "", buf, 5 , false);
 //	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+	char str_port[10]; // Assuming the maximum number of digits needed is 10
+	sprintf(str_port, "%d", DEFAULT_PORT);
 
-//	fileIni->ReadString("cfagent", "Port", DEFAULT_PORT, buf, 7, false);
-//	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
+	fileIni->ReadString("cfagent", "Port", str_port, buf, 6, false);
+	printf("port: [%d]\n", atoi(buf));
+
+	configRec.usPort = atoi(buf);
+	printf("port: [%d]\n", configRec.usPort);
 
 //	fileIni->ReadString("cfagent", "MaxParmSize", DEFAULT_MAXPARMSIZE, buf, 20, false);
 //	if (_DEBUG_YN[0] == 'Y') printf("[%s][%d]\n", __FILE__, __LINE__);
@@ -194,7 +203,7 @@ void CONFIGPARM::DisplayConfigParm() {
 //	sprintf(msg, "     RuleMode            = %s", configRec.RuleMode);
 //	printf("     RuleMode            = %s\n", configRec.RuleMode);
 
-	_WriteLogNo(_LOG_LOG, msg);
+//	_WriteLogNo(_LOG_LOG, msg);
 	sprintf(msg, "     Max Parm Size       = %5d KB",
 			configRec.ulMaxParmSize / 1024);
 	_WriteLogNo(_LOG_LOG, msg);
