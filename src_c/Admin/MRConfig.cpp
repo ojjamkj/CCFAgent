@@ -65,7 +65,6 @@ char   _DEBUG_YN[2];
 
 
 
-
 CONFIG_REC configRec;
 CONFIGPARM *configParm;
 CMTProfile *fileIni;
@@ -105,6 +104,13 @@ CONFIGPARM::CONFIGPARM() {
 
 	configRec.ulMaxQueryCount = DEFAULT_FETCH_COUNT;
 	configRec.usRuleApplyTime=0;
+
+	time_t now;
+	struct tm* timeinfo;
+	time(&now);
+	timeinfo = localtime(&now);
+	strftime(configRec.startTime, sizeof(configRec.startTime), "%Y.%m.%d %H:%M:%S", timeinfo);
+
 //	_DEBUG_YN[0] = 'N';
 //	_DEBUG_YN[1] = 0X00;
 
@@ -176,7 +182,7 @@ int CONFIGPARM::ReadConfigParm(char *fileName) {
 void CONFIGPARM::DisplayConfigParm() {
 	char msg[128];
 
-	sprintf(msg, "%s\n", "ChangeFlow Agent-C 1.00 (2023.07.28) ");
+	sprintf(msg, "ChangeFlow Agent-C %s (%s) \n", CHANGEFLOW_VERSION, "2023.08.02");
 	_WriteLogNo(_LOG_LOG, msg);
 
 	//_WriteLogNo(_LOG_LOG, "Configuration\n");

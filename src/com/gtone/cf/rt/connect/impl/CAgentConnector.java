@@ -10,7 +10,9 @@ import com.gtone.cf.rt.file.FileDeployCommand;
 import com.gtone.cf.rt.file.FileModel;
 import com.gtone.cf.util.ICFConstants;
 
+import jspeed.base.util.StringHelper;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 
  
@@ -18,25 +20,42 @@ public class CAgentConnector extends AbstractConnector {
 	SimpleDateFormat sdf = new SimpleDateFormat(ICFConstants.DATE_PATTERN);
 	
 	public BaseCommand CMD_AGENT_PING(CFAPI5J conn, HashMap param, BaseCommand cmd) {
-		boolean status=false;
+		
 		BaseCommand resultCmd = new FileDeployCommand();
 		
 		try {
 			conn.MBRS_Run();
 			
-			status = conn.ReadInt()==0 ? true:false ;
-			
-			String msg=conn.ReadString();
-			cmd.setResult(status, msg.toString()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
-			
-			// set result
-			HashMap dataHash = new HashMap();
-			dataHash.put(ICFConstants.CMD_RESULT, msg.toString());
-			resultCmd.setResult(true, null, dataHash);
-			resultCmd.setValue(ICFConstants.CMD_RESULT,"true");
-			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String version =conn.ReadString();
+					String startTime =conn.ReadString();
+					String installDir =conn.ReadString();
+					HashMap versionInfoMap = new HashMap();
+					versionInfoMap.put("AGENT_BUNDLE_VERSION", version);
+					versionInfoMap.put("AGENT_START_TIME", startTime);
+					versionInfoMap.put("AGENT_INSTALL_DIR", installDir);
+					
+					
+					// set result
+					HashMap dataHash = new HashMap();
+					dataHash.put(ICFConstants.CMD_RESULT, "I AM ALIVE");
+					dataHash.put("AGENT_META_INFO", versionInfoMap);
+
+					resultCmd.setResult(true, null, dataHash);
+					resultCmd.setValue(ICFConstants.CMD_RESULT,"true");
+				}else {
+					resultCmd.setResult(false, message, null);
+				}				
+			}else {
+				resultCmd.setResult(false, "unknown error", null);
+			}
 		} catch (Exception e) {
-			resultCmd.setResult(status, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
+			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
 			e.printStackTrace();
 		}
 		return resultCmd;
@@ -79,6 +98,48 @@ public class CAgentConnector extends AbstractConnector {
 			e.printStackTrace();
 		}
 		return resultCmd;
+	}
+	
+	
+	public FileModel CMD_VIEWFILE(HashMap param, String targetFile, String targetPath) throws Exception{
+		
+		try {
+			CFAPI5J conn = new CFAPI5J();
+			String ip = (String)param.get(ICFConstants.TARGET_IP);
+			int port = Integer.parseInt( (String)param.get(ICFConstants.TARGET_PORT));
+			
+			conn.brexPrimary=ip;
+			conn.brexPort=port;
+			conn.Initialize("" + BaseCommand.CMD_VIEWFILE);
+				
+			conn.WriteString( targetFile );
+			conn.MBRS_Run();
+			
+			boolean status = conn.ReadInt()==0 ? true:false ;
+			
+			if( status ) {
+				String result = conn.ReadString();
+				String message =conn.ReadString();
+				
+				if(new Boolean(result).booleanValue()) {
+					String remoteTargetRootPath = targetPath;
+					 
+					String jsonstring = conn.ReadString();
+					if(jsonstring== null || "".equals(jsonstring)) {
+						throw new Exception("received file info is null");
+					}
+					
+//					System.out.println(jsonstring);
+					
+					FileModel file = setFileModel(conn, JSONObject.fromObject(jsonstring), remoteTargetRootPath, true);
+					
+					return file;
+				}				
+			}
+		} catch (Exception e) {
+			throw(e);
+		}
+		return null;
 	}
 
 	public BaseCommand CMD_DELTEFILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
@@ -142,7 +203,8 @@ public class CAgentConnector extends AbstractConnector {
 
 	public BaseCommand CMD_DOSEARCH_ONLY_FILE(CFAPI5J conn, HashMap param, BaseCommand cmd) {
 
-		BaseCommand resultCmd = new FileDeployCommand(); 
+		BaseCommand resultCmd = new FileDeployCommand();
+		
 		try {
 			
 			conn.WriteString( (String) param.get("TARGET_PATH") );
@@ -169,15 +231,22 @@ public class CAgentConnector extends AbstractConnector {
 					System.out.println("jsonstring size = " + size);
 					
 					ArrayList resultList = new ArrayList();					
+
 					for(int i=0; i<size; i++)
 					{
+						if(viewDirList.get(i)==null || viewDirList.get(i) instanceof JSONNull) continue;
+						String filePath = (String)viewDirList.get(i);
+						param.put("TARGET_FILE", filePath);
 						
-						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
+						
+						FileModel fileModel = this.CMD_VIEWFILE(param, filePath, remoteTargetRootPath);
+						
 						if(fileModel != null) {
 							int fileLength = (int)fileModel.getLength();
-							System.out.println(fileModel.getPath());
-							fileModel.setFileSource(conn.ReadFileByte(fileLength));
+							System.out.println(fileModel.getPath());							
 							resultList.add(fileModel);
+						}else {
+							throw new Exception("fail to get file=" + filePath);
 						}
 					}
 					
@@ -192,7 +261,7 @@ public class CAgentConnector extends AbstractConnector {
 		} catch (Exception e) {
 			resultCmd.setResult(false, e.getMessage()+" "+conn.brexPrimary+"/"+conn.brexPort, null);
 			e.printStackTrace();
-		}
+		} 
 		return resultCmd;
 	}
 	
@@ -202,21 +271,19 @@ public class CAgentConnector extends AbstractConnector {
 		try {
 			
 			conn.WriteString( (String) param.get("TARGET_PATH") );
-			
 			conn.WriteString( (String) param.get("START_ROW") );
 			
-			ArrayList<String> list = null;
-			list = (ArrayList)param.get("INC_FILTER");
-			JSONArray include = new JSONArray();
-			for(String m: list) include.add(m);
+			ArrayList<String> list = (ArrayList)param.get("INC_FILTER");
+			conn.WriteString( ""+list.size());
+			for(String m: list) {
+				conn.WriteString(m);
+			}
 			
 			list = (ArrayList)param.get("EXC_FILTER");
-			JSONArray ignore = new JSONArray();
-			for(String m: list) ignore.add(m);
-			
-			conn.WriteString( include.toString());
-			conn.WriteString( ignore.toString());
-
+			conn.WriteString( ""+list.size());
+			for(String m: list) {
+				conn.WriteString(m);
+			}
 			
 			conn.MBRS_Run();
 			
@@ -236,17 +303,30 @@ public class CAgentConnector extends AbstractConnector {
 
 					JSONArray viewDirList = JSONArray.fromObject(jsonstring);
 					int size  = viewDirList.size();
-					System.out.println("jsonstring size = " + size);
+					System.out.println("jsonstring = " + jsonstring);
 					
 					ArrayList resultList = new ArrayList();					
 					for(int i=0; i<size; i++)
 					{
+						if(viewDirList.get(i)==null || viewDirList.get(i) instanceof JSONNull) {
+							System.out.println("TARGET_FILE0 : " + viewDirList.get(i));
+							continue;
+						}
 						
-						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
+						String filePath = (String)viewDirList.get(i);
+						param.put("TARGET_FILE1", filePath);
+						
+						
+						FileModel fileModel = this.CMD_VIEWFILE(param, filePath, remoteTargetRootPath);
+						
 						if(fileModel != null) {
 							int fileLength = (int)fileModel.getLength();
-//							System.out.println(fileModel.getPath());
-							fileModel.setFileSource(conn.ReadFileByte(fileLength));
+//							System.out.println(fileModel.getPath());							
+							resultList.add(fileModel);
+						}else {
+							fileModel = new FileModel();
+							fileModel.setPath(filePath);
+							fileModel.setErrorMsg("can't read file");
 							resultList.add(fileModel);
 						}
 					}
@@ -296,6 +376,8 @@ public class CAgentConnector extends AbstractConnector {
 					ArrayList resultList = new ArrayList();
 					for(int i=0; i<size; i++)
 					{
+						if(viewDirList.get(i)==null || viewDirList.get(i) instanceof JSONNull) continue;
+						
 						FileModel fileModel = setFileModel(conn, (JSONObject)viewDirList.get(i), remoteTargetRootPath, false);
 						if(fileModel != null) resultList.add(fileModel);
 					}
@@ -387,9 +469,9 @@ public class CAgentConnector extends AbstractConnector {
 					ArrayList resultList = new ArrayList();
 					for(int i=0; i<size; i++)
 					{
-						JSONObject dirObj = (JSONObject)viewDirList.get(i);
-						if(dirObj.containsKey("path")) {
-							resultList.add(dirObj.get("path"));
+						String dirPath = (String)viewDirList.get(i);
+						if(!dirPath.equals("")) {
+							resultList.add(dirPath);
 						}
 					}
 					
@@ -415,17 +497,17 @@ public class CAgentConnector extends AbstractConnector {
 			
 			conn.WriteString( (String) param.get("TARGET_PATH") );
 			
-			ArrayList<String> list = null;
-			list = (ArrayList)param.get("INCLUDE_FILTER");
-			JSONArray include = new JSONArray();
-			for(String m: list) include.add(m);
+			ArrayList<String> list = (ArrayList)param.get("INCLUDE_FILTER");
+			conn.WriteString( ""+list.size());
+			for(String m: list) {
+				conn.WriteString(m);
+			}
 			
 			list = (ArrayList)param.get("IGNORE_FILTER");
-			JSONArray ignore = new JSONArray();
-			for(String m: list) ignore.add(m);
-			
-			conn.WriteString( include.toString());
-			conn.WriteString( ignore.toString());
+			conn.WriteString( ""+list.size());
+			for(String m: list) {
+				conn.WriteString(m);
+			}
 
 			
 			conn.MBRS_Run();
@@ -462,7 +544,7 @@ public class CAgentConnector extends AbstractConnector {
 		
 		if(fileObj.containsKey("filename")) {
 			file.setFilename(fileObj.getString("filename"));
-			System.out.println(fileObj.getString("filename"));
+//			System.out.println(fileObj.getString("filename"));
 		}
 		if(fileObj.containsKey("isdir")) {
 			file.setIsDirectory(fileObj.getInt("isdir")==1? true: false);
@@ -488,7 +570,7 @@ public class CAgentConnector extends AbstractConnector {
 		}
 		if(fileObj.containsKey("checksum")) file.setChecksum(fileObj.getString("checksum"));
 		if(fileObj.containsKey("errmsg")) file.setErrorMsg(fileObj.getString("errmsg"));
-		if(includeSource) file.setFileSource(conn.ReadFileByte());
+		if(includeSource && StringHelper.evl(file.getErrorMsg(), null)==null) file.setFileSource(conn.ReadFileByte());
 		
 		return file;
 	}

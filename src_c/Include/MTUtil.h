@@ -1,4 +1,3 @@
-#include <jansson.h>
 #include <regex.h>
 #include <zlib.h>
 
@@ -9,6 +8,15 @@
 #ifndef _POSTGRE
 
 #endif
+//typedef struct {
+//    char** array;
+//    size_t size;
+//    size_t capacity;
+//} StringArrayList;
+//void initStringArrayList(StringArrayList* list);
+//void addStringElement(StringArrayList* list, const char* element);
+//void freeStringArrayList(StringArrayList* list);
+
 char * rltrim( char *str );
 double getDoubleToString(double dVal);
 char *  rtrim( char *str );
@@ -59,13 +67,16 @@ long	mIsAlpha(char *buf, long n);
 void convertToHexString(char *output, unsigned long value);
 unsigned long calculateCRC32(const char *file_path);
 int createFile(char* filename, const unsigned char* data, size_t length, char *msg);
-json_t* get_file_info(const char* path, char* msg);
-void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t targetRegExp, int regExpValid, int includeMode);
-void get_files_info(const char* root_path, const char* dir_path, json_t *dir_info, int startRow, int currentCount, long allFileSize, char **filter_include, char **filter_ignore, int num_include, int num_ignore);
-void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore);
+char* get_file_info(const char* path, char* msg);
+int get_directory_info(const char* dir_path, FILE *fw, int includeSub, int defaultGetRows, regex_t regex,
+		int regExpValid, int includeMode, int* appendedCount);
+int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int startRow, int* currentCount, long* allFileSize,
+		char **filter_include, char **filter_ignore, int num_include, int num_ignore);
+int scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore);
 bool match_filters(const char *source, char **filter_include, char **filter_ignore, int num_include, int num_ignore, bool is_case_sensitive);
 bool match(const char *source, const char *filter, bool is_case_sensitive);
 const char* get_relative_path(const char* filePath, const char* rootPath );
+char* readFileContents(const char* filePath);
 char * removeSlash(char* str);
 #endif    //   __INC_MTUTIL
 

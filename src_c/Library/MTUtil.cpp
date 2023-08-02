@@ -1,6 +1,7 @@
 #define AES_BLOCK_SIZE  32
 #define DIR_SEPARATOR '/'
 #define MAX_FILES_SIZE 50000000
+#define PATH_MAX 1024
 
 
 #include 	<unistd.h> // For Linux/Unix
@@ -34,19 +35,18 @@
 
 
 
-
-
 const char* getFileNameFromPath(const char* path) {
     const char* last_sep = strrchr(path, '/');
     return last_sep ? last_sep + 1 : path;
 }
 
-json_t* get_file_info(const char* path, char* msg) {
+char* get_file_info(const char* path, char* msg) {
 	struct stat fileInfo;
 	int read=0;
 	int write=0;
 	int execute=0;
 	int dir=0;
+	char* jsonStr = NULL;
 
 	if (stat(path, &fileInfo) != 0) {
 		sprintf(msg,"Failed to get file attributes");
@@ -63,22 +63,17 @@ json_t* get_file_info(const char* path, char* msg) {
 
 	const char* filename = getFileNameFromPath(path);
 
-	json_t *file_info = json_object();
 
-	json_object_set_new(file_info, "filename", json_string(filename));
-	json_object_set_new(file_info, "path", json_string(path));
-	json_object_set_new(file_info, "size", json_integer((long long)fileInfo.st_size));
-	json_object_set_new(file_info, "isdir", json_integer(dir));
-	json_object_set_new(file_info, "mtime", json_integer((long)fileInfo.st_mtime));
-	json_object_set_new(file_info, "read", json_integer(read));
-	json_object_set_new(file_info, "write", json_integer(write));
-	if(!read) json_object_set_new(file_info, "errmsg", json_string("can't read") );
-//	json_object_set_new(file_info, "execute", json_integer(execute));
+	int result = asprintf(&jsonStr,
+			"{\"filename\":\"%s\",\"path\":\"%s\",\"size\":%lld,\"isdir\":%i,\"mtime\":%ld,\"read\":%i,\"write\":%i,\"execute\":%i,\"errmsg\":\"%s\"}",
+		    filename, path, fileInfo.st_size, dir, (long)fileInfo.st_mtime, read, write, execute, (!read ? "can't read": ""));
 
-	printf("file info:  %s\n", file_info );
+	if (result == -1) {
+		sprintf(msg, "Failed to allocate memory for JSON string");
+		return NULL;
+	}
 
-	return file_info;
-
+	return jsonStr;
 }
 
 int directoryExists(const char* path) {
@@ -195,246 +190,354 @@ int createFile(char* filename, const unsigned char* data, size_t length, char *m
 	return true;
 }
 
-void get_directory_info(const char* dir_path, json_t *dir_info, int includeSub, int defaultGetRows, regex_t regex, int regExpValid, int includeMode ) {
-
+int get_directory_info(const char* dir_path, FILE *fw, int includeSub, int defaultGetRows, regex_t regex,
+		int regExpValid, int includeMode, int* appendedCount )
+{
 	if(defaultGetRows>-1){
-		size_t array_length = json_array_size(dir_info);
-		if(array_length >= defaultGetRows){
-			printf("JSON Array Length: %zu\n", array_length);
-			return;
+		if(*appendedCount >= defaultGetRows){
+			printf("JSON Array Length: %zu\n", *appendedCount);
+			return false;
 		}
 	}
 
+	typedef struct {
+		DIR* dir;
+		char path[PATH_MAX];
+	} DirInfo;
+
+	DirInfo stack[100000]; // Stack to hold directory information
+	int top = -1; // Top of the stack
+
     DIR *dir = opendir(dir_path);
     if (!dir) {
         fprintf(stderr, "Error opening directory: %s\n", dir_path);
-        return;
+        return false;
     }
 
-    struct dirent *entry;
-    while ((entry = readdir(dir))) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
+    stack[++top].dir = dir;
+    strcpy(stack[top].path, dir_path);
 
-        char path[PATH_MAX];
-        //char errorMsg[200];
-        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
-        struct stat file_stat;
-        if (stat(path, &file_stat) == 0) {
-        	int dir = 0;
-        	if (S_ISDIR(file_stat.st_mode)) dir=1;
+    int currentStack=0;
 
-        	int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
-        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
-        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
-        	const char* filename = getFileNameFromPath(path);
+	while (top >= currentStack) {
+		DIR* current_dir = stack[currentStack].dir;
+    	char* current_path = stack[currentStack].path;
 
-        	if(!dir && regExpValid){
-        		printf("Regular Expression evaluat...!\n");
-        		int ret = regexec(&regex, path, 0, NULL, 0);
-        		if (ret == 0) {
-        			printf("Matched!\n");
-        		} else if (ret == REG_NOMATCH) {
-        		    printf("No match!\n");
-        		    continue;
-        		} else {
-        			char error_buffer[100];
-        			regerror(ret, &regex, error_buffer, sizeof(error_buffer));
-        			printf("Regex match failed: %s\n", error_buffer);
-        		    continue;
-        		}
-        	}
+    	currentStack++;
 
-        	json_t *file_info = json_object();
-        	json_object_set_new(file_info, "filename", json_string(filename));
-        	json_object_set_new(file_info, "path", json_string(path));
-        	json_object_set_new(file_info, "size", json_integer(file_stat.st_size));
-        	json_object_set_new(file_info, "isdir", json_integer(dir));
-        	json_object_set_new(file_info, "mtime", json_integer((long)file_stat.st_mtime));
-        	json_object_set_new(file_info, "read", json_integer(read));
-        	json_object_set_new(file_info, "write", json_integer(write));
-//        	json_object_set_new(file_info, "relpath", json_string(get_relative_path(path, root_path)));
+		struct dirent *entry;
+		while ((entry = readdir(current_dir))) {
 
-//        	json_object_set_new(file_info, "ROOTPATH", "");
-//        	json_object_set_new(file_info, "execute", json_integer(execute));
+			if (entry == NULL) {
+//				closedir(current_dir);
+				printf("close: %s", current_dir);
+				continue;
+			}
 
-        	if(dir && (includeMode==0 || includeMode==1)){
-        		json_array_append_new(dir_info, file_info);
-        	}
-        	if(!dir && (includeMode==0 || includeMode==2)){
-        		json_array_append_new(dir_info, file_info);
-        	}
-//        	printf("file info:  %s\n", file_info );
-        	if (dir && includeSub) {
-        		get_directory_info(path, dir_info, includeSub, defaultGetRows, regex, regExpValid, includeMode);
-            }
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
 
-        	if(defaultGetRows>-1){
-        		size_t array_length = json_array_size(dir_info);
-        		if(array_length >= defaultGetRows){
-        			printf("JSON Array Length: %zu\n", array_length);
-        			break;
-        		}
-        	}
-        }
-    }
+			char path[PATH_MAX];
+			char errorMsg[200];
+			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
+			struct stat file_stat;
+			if (stat(path, &file_stat) == 0) {
+				int dir = 0;
+				if (S_ISDIR(file_stat.st_mode)) dir=1;
 
-    closedir(dir);
-
-}
-
-void get_files_info(const char* root_path, const char* dir_path, json_t *dir_info, int startRow, int currentCount, long allFileSize, char **filter_include, char **filter_ignore, int num_include, int num_ignore){
-
-    DIR *dir = opendir(dir_path);
-    if (!dir) {
-        printf("Error opening directory: %s\n", dir_path);
-        return;
-    }
-
-    struct dirent *entry;
-    while ((entry = readdir(dir))) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
-
-        char path[PATH_MAX];
-        //char errorMsg[200];
-        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
-        struct stat file_stat;
-        if (stat(path, &file_stat) == 0) {
-        	int dir = 0;
-        	if (S_ISDIR(file_stat.st_mode)) dir=1;
-
-        	if(!dir && (num_include > 0 || num_ignore > 0)) {
-        		if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
-        			printf("%s : Match found.\n", path);
-        		} else {
-//        			printf("%s : No match found.\n", path);
-        			continue;
-        		}
-        	}
-
-
-        	if(!dir){
-
-        		currentCount = currentCount + 1;
-        		printf("1.currentCount: %d\n", currentCount);
-        		if( currentCount < startRow )
-        		{
-        			continue;
-        		}
-        		printf("2.currentCount: %d\n", currentCount);
-        		int filesize = (int)file_stat.st_size;
-        		printf("3.fizesize: %d\n", filesize);
-        		if( (allFileSize + filesize) >  MAX_FILES_SIZE) return;
-        		printf("4.fizesize: %d  %d\n", (allFileSize + filesize), MAX_FILES_SIZE);
-
-        		int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
-        		//        	int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
-        		//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
-        		const char* filename = getFileNameFromPath(path);
-
-				json_t *file_info = json_object();
-				json_object_set_new(file_info, "filename", json_string(filename));
-				json_object_set_new(file_info, "isdir", json_integer(dir));
-				json_object_set_new(file_info, "mdate", json_integer((long)file_stat.st_mtime));
-				json_object_set_new(file_info, "path", json_string(path));
-				json_object_set_new(file_info, "relpath", json_string(get_relative_path(path, root_path)));
-				json_object_set_new(file_info, "rootpath", json_string(""));
-				json_object_set_new(file_info, "read", json_integer(read));
-	//        	json_object_set_new(file_info, "write", json_integer(write));
-				json_object_set_new(file_info, "size", json_integer(file_stat.st_size));
-				if(read) {
-					allFileSize = allFileSize +  filesize;
-				}else{
-					json_object_set_new(file_info, "errmsg", json_string("can't read") );
+				if(!dir && regExpValid){
+					printf("Regular Expression evaluate...!\n");
+					int ret = regexec(&regex, path, 0, NULL, 0);
+					if (ret == 0) {
+						printf("Matched!\n");
+					} else if (ret == REG_NOMATCH) {
+						printf("No match!\n");
+						continue;
+					} else {
+						char error_buffer[100];
+						regerror(ret, &regex, error_buffer, sizeof(error_buffer));
+						printf("Regex match failed: %s\n", error_buffer);
+						continue;
+					}
 				}
 
-        		json_array_append_new(dir_info, file_info);
-        		printf("5.put obj\n");
+				if(( dir && (includeMode==0 || includeMode==1) ) || (!dir && (includeMode==0 || includeMode==2)) ){
 
-        	}
+					if(includeMode==0){
+						char* json_str = get_file_info(path, errorMsg);
 
-        	if (dir) {
-        		get_files_info(root_path, path, dir_info, startRow, currentCount, allFileSize, filter_include, filter_ignore, num_include, num_ignore);
-            }
-        }
+						if(json_str==NULL){
+							return false;
+						}
+						fprintf(fw, "%s,", json_str);
+						free(json_str);
+					}else{
+						fprintf(fw, "\"%s\",", path);
+					}
+					(*appendedCount)++;
+				}
+
+				if(defaultGetRows>-1 && *appendedCount >= defaultGetRows){
+					printf("JSON Array Length: %zu\n", *appendedCount);
+					break;
+				}
+
+
+				if (dir && includeSub) {
+					DIR* new_dir = opendir(path);
+					if (new_dir) {
+						stack[++top].dir = new_dir;
+						strcpy(stack[top].path, path);
+
+						printf("%d %s: \n", top, stack[top].path);
+					}
+				}
+			}
+		}
+    	printf("%d  %d", top, currentStack);
+    	closedir(current_dir);
     }
 
-    closedir(dir);
+	return true;
+}
+
+int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int startRow, int* currentCount, long* allFileSize,
+		char **filter_include, char **filter_ignore, int num_include, int num_ignore)
+{
+
+	typedef struct {
+		DIR* dir;
+	    char path[PATH_MAX];
+	} DirInfo;
+
+	DirInfo stack[100000]; // Stack to hold directory information
+	int top = -1; // Top of the stack
+
+	DIR* dir = opendir(dir_path);
+	if (!dir) {
+		printf("Error opening directory: %s\n", dir_path);
+	    return false;
+	}
+
+	stack[++top].dir = dir;
+	strcpy(stack[top].path, dir_path);
+
+	int currentStack=0;
+
+	while (top >= currentStack) {
+		DIR* current_dir = stack[currentStack].dir;
+    	char* current_path = stack[currentStack].path;
+
+    	currentStack++;
+
+
+    	struct dirent *entry;
+    	while ((entry = readdir(current_dir))) {
+
+    		if (entry == NULL) {
+//				closedir(current_dir);
+				printf("close: %s", current_dir);
+				continue;
+			}
+
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
+
+			char path[PATH_MAX];
+			//char errorMsg[200];
+			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
+
+			printf("cur path : %s", path);
+
+			struct stat file_stat;
+			if (stat(path, &file_stat) == 0) {
+				int dir = 0;
+				if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+				if(!dir && (num_include > 0 || num_ignore > 0)) {
+					if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
+						printf("%s : Match found.\n", path);
+					} else {
+	//        			printf("%s : No match found.\n", path);
+						continue;
+					}
+				}
+
+
+				if(!dir){
+					(*currentCount)++;
+
+					if( *currentCount < startRow )
+					{
+						continue;
+					}
+
+
+					int filesize = (int)file_stat.st_size;
+
+					if( (*allFileSize + filesize) >  MAX_FILES_SIZE) {
+						closedir(current_dir);
+						return true;
+					}
+
+					(*allFileSize)+=filesize;
+
+					fprintf(fw, "\"%s\",", path);
+					printf("added file : %s", path);
+				}else {
+					DIR* new_dir = opendir(path);
+					if (new_dir) {
+						stack[++top].dir = new_dir;
+						strcpy(stack[top].path, path);
+
+						printf("%d %s: \n", top, stack[top].path);
+					}
+				}
+			}
+    	}
+    	printf("%d  %d", top, currentStack);
+    	closedir(current_dir);
+    }
+
+    return true;
+}
+
+int scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore) {
+
+	typedef struct {
+		DIR* dir;
+	    char path[PATH_MAX];
+	} DirInfo;
+
+	DirInfo stack[100000]; // Stack to hold directory information
+	int top = -1; // Top of the stack
+
+	DIR* dir = opendir(dir_path);
+	if (!dir) {
+		printf("Error opening directory: %s\n", dir_path);
+	    return false;
+	}
+
+	stack[++top].dir = dir;
+	strcpy(stack[top].path, dir_path);
+
+	int currentStack=0;
+
+	while (top >= currentStack) {
+		DIR* current_dir = stack[currentStack].dir;
+    	char* current_path = stack[currentStack].path;
+
+    	currentStack++;
+
+
+		struct dirent *entry;
+		while ((entry = readdir(current_dir))) {
+			if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+				continue;
+			}
+
+			char path[PATH_MAX];
+			//char errorMsg[200];
+			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
+			struct stat file_stat;
+			if (stat(path, &file_stat) == 0) {
+				int dir = 0;
+				if (S_ISDIR(file_stat.st_mode)) dir=1;
+
+				if(!dir && (num_include > 0 || num_ignore > 0)) {
+					if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
+						printf("%s : Match found.\n", path);
+					} else {
+						printf("%s : No match found.\n", path);
+						continue;
+					}
+				}
+
+				if(!dir){
+					int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
+					int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
+					//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
+					const char* filename = getFileNameFromPath(path);
+					char crc32_hex_string[9];
+					if(read)
+						convertToHexString(crc32_hex_string, calculateCRC32(path));
+
+					char* jsonStr = NULL;
+
+					int result = asprintf(&jsonStr,
+							"{\"NAME\":\"%s\",\"PATH\":\"%s\",\"RELPATH\":\"%s\",\"ROOTPATH\":\"%s\",\"CHECKSUM\":\"%s\",\"SIZE\":%lld,\"ISDIR\":%i,\"MDATE\":%ld,\"READ\":%i,\"WRITE\":%i, \"ERRMSG\":\"%s\" }",
+							filename, path, get_relative_path(path, root_path), "", crc32_hex_string, file_stat.st_size, dir, (long)file_stat.st_mtime, read, write, (read? "" : "can't read" ));
+
+					if (result == -1) {
+						printf("Failed to allocate memory for JSON string");
+						return false;
+					}
+
+
+					fprintf(fw, "%s\n",jsonStr);
+					free(jsonStr);
+				}
+
+				if (dir) {
+					DIR* new_dir = opendir(path);
+					if (new_dir) {
+						stack[++top].dir = new_dir;
+						strcpy(stack[top].path, path);
+
+						printf("%d %s: \n", top, stack[top].path);
+					}
+				}
+			}
+		}
+
+    	printf("%d  %d", top, currentStack);
+    	closedir(current_dir);
+    }
+
+    return true;
 
 }
 
-void scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, char **filter_include, char **filter_ignore, int num_include, int num_ignore) {
-
-    DIR *dir = opendir(dir_path);
-    if (!dir) {
-        fprintf(stderr, "Error opening directory: %s\n", dir_path);
-        return;
+char* readFileContents(const char *filePath) {
+    FILE* file = fopen(filePath, "r");
+    if (file == NULL) {
+        printf("Error opening the file: %s\n", filePath);
+        return NULL;
     }
 
-    struct dirent *entry;
-    while ((entry = readdir(dir))) {
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
-        }
+    // Determine the file size
+    fseek(file, 0, SEEK_END);
+    long file_size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
-        char path[PATH_MAX];
-        //char errorMsg[200];
-        snprintf(path, sizeof(path), "%s/%s", dir_path, entry->d_name);
-        struct stat file_stat;
-        if (stat(path, &file_stat) == 0) {
-        	int dir = 0;
-        	if (S_ISDIR(file_stat.st_mode)) dir=1;
-
-        	if(!dir && (num_include > 0 || num_ignore > 0)) {
-        		if (match_filters(path, filter_include, filter_ignore, num_include, num_ignore, true)) {
-        			printf("%s : Match found.\n", path);
-        		} else {
-        			printf("%s : No match found.\n", path);
-        			continue;
-        		}
-        	}
-
-        	if(!dir){
-        		int read = file_stat.st_mode & S_IRUSR ? 1 : 0;
-        		int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
-        		//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
-        		const char* filename = getFileNameFromPath(path);
-        		char crc32_hex_string[9];
-        		if(read)
-        			convertToHexString(crc32_hex_string, calculateCRC32(path));
-
-        		json_t *file_info = json_object();
-        		json_object_set_new(file_info, "NAME", json_string(filename));
-        		json_object_set_new(file_info, "ISDIR", json_integer(dir));
-        		json_object_set_new(file_info, "MDATE", json_integer((long)file_stat.st_mtime));
-        		json_object_set_new(file_info, "PATH", json_string(path));
-        		json_object_set_new(file_info, "RELPATH", json_string(get_relative_path(path, root_path)));
-        		json_object_set_new(file_info, "ROOTPATH", json_string(""));
-        		json_object_set_new(file_info, "READ", json_integer(read));
-        		json_object_set_new(file_info, "WRITE", json_integer(write));
-        		json_object_set_new(file_info, "SIZE", json_integer(file_stat.st_size));
-        		if(read) json_object_set_new(file_info, "CHECKSUM", json_string(crc32_hex_string));
-        		else json_object_set_new(file_info, "ERRMSG", json_string("can't read") );
-        		//        	json_object_set_new(file_info, "execute", json_integer(execute));
-
-        		char *json_str = json_dumps(file_info, JSON_COMPACT);
-        		if (json_str != NULL) {
-        			fprintf(fw, "%s\n",json_str);
-        			free(json_str);
-        		}
-        	}
-
-        	if (dir) {
-        		scan_directory_info(root_path, path, fw, filter_include, filter_ignore, num_include, num_ignore);
-            }
-        }
+    // Allocate memory for reading the file content
+    char* buffer = (char*)malloc(file_size + 1);
+    if (buffer == NULL) {
+        printf("Memory allocation failed.\n");
+        fclose(file);
+        return NULL;
     }
 
-    closedir(dir);
+    // Read the file content using fread
+    size_t bytes_read = fread(buffer, 1, file_size, file);
 
+    if (bytes_read != file_size) {
+        printf("Error reading the file.\n");
+        free(buffer);
+        fclose(file);
+        return NULL;
+    }
+    // Null-terminate the buffer to treat it as a C-style string
+    buffer[bytes_read] = '\0';
+    // Close the file
+    fclose(file);
+    // Do something with the file content in the buffer
+    // Don't forget to free the allocated memory
+    // free(buffer);
+
+    return buffer;
 }
 
 bool match(const char *source, const char *filter, bool is_case_sensitive) {
@@ -493,40 +596,6 @@ const char* get_relative_path(const char* filePath, const char* rootPath ) {
 	return "/";
 }
 
-//int calculate_sha256(const char* file_path, const char* sha256sum, char* error_msg) {
-//	unsigned char buffer[1024];
-//	size_t bytesRead;
-//	unsigned char shaData[1024];
-//	unsigned char digest[SHA256_DIGEST_LENGTH];
-//	char sha256String[SHA256_DIGEST_LENGTH * 2 + 1];
-//
-//	printf("let's do checksum of %s", file_path);
-//	FILE* file = fopen(file_path, "rb");
-//	if (file == NULL) {
-//		strcpy(error_msg, "can't open file.");
-//		return false;
-//	}
-//	SHA256_CTX sha256Context;
-//	SHA256_Init(&sha256Context);
-//	while ((bytesRead = fread(buffer, 1, sizeof(buffer), file)) > 0) {
-//		SHA256_Update(&sha256Context, buffer, bytesRead);
-//	}
-//	SHA256_Final(digest, &sha256Context);
-//
-//	memset(sha256String, 0xff, SHA256_DIGEST_LENGTH * 2 + 1);
-//	for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-//		sprintf(&sha256String[i * 2], "%02X", (unsigned int)digest[i]);
-//	}
-//	fclose(file);
-//	printf("file's checksum %s", sha256String);
-//	if (strcmp((const char*)sha256String, sha256sum) == 0) {
-//		return true;
-//	}
-//	else {
-//		sprintf(error_msg, "not matched file checksum");
-//		return false;
-//	}
-//}
 
 void convertToHexString(char *output, unsigned long value) {
      sprintf(output, "%08lx", value);
@@ -697,162 +766,6 @@ unsigned char StringChange(char *pData, char *pSrc, char *pDest) {
 }
 
 
-//char* DetailTimeStamp(char *lpszDateTime) {
-//	time_t localTime;
-//	struct tm *stTempTime;
-//	struct tm pTm2;
-//	int usec;
-//
-//#ifdef WIN32
-//	struct _timeb timebuffer;
-//	_ftime(&timebuffer);
-//	usec = (long)timebuffer.millitm;
-//#else
-//	struct timeval stamp;
-//	stamp.tv_usec = 0;
-//	gettimeofday(&stamp, NULL);
-//
-//	usec = stamp.tv_usec / 1000;
-//#endif
-//
-//	localTime = time(&localTime); /* Get time as long integer. */
-//
-//#ifdef WIN32
-//	stTempTime = localtime(&localTime);
-//#else
-//	stTempTime = localtime_r(&localTime, &pTm2);
-//#endif
-//
-//	sprintf(lpszDateTime
-//		, "%4d%02d%02d%02d%02d%02d%03d"
-//		, stTempTime->tm_year + 1900
-//		, stTempTime->tm_mon + 1
-//		, stTempTime->tm_mday
-//		, stTempTime->tm_hour
-//		, stTempTime->tm_min
-//		, stTempTime->tm_sec, usec);
-//
-//	return lpszDateTime;
-//}
-//
-//void GetCurrentTimeStr(char *TimeBuffer) {
-//	time_t localTime;
-//	struct tm *stTempTime;
-//	struct tm pTm2;
-//	char CurrentTime[20];
-//
-//	localTime = time(&localTime);
-//#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
-//	struct timeval tv;
-//	gettimeofday(&tv, 0);
-//	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
-//#elif defined(_OS390) || defined(_OS400)
-//	time(&localTime);
-//#elif  defined(WIN32)
-//	time(&localTime);
-//	stTempTime = localtime(&localTime);
-//
-//#endif
-//
-//	//	memset(CurrentTime, NULL, sizeof(CurrentTime));
-//
-//	sprintf((char *)CurrentTime, "%4d%02d%02d %02d%02d%02d",
-//		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
-//		stTempTime->tm_min, stTempTime->tm_sec);
-//
-//	memcpy(TimeBuffer, (char *)CurrentTime, sizeof(CurrentTime));
-//	return;
-//}
-//
-//void GetCurrentDateStr(char *DateBuffer) {
-//	time_t localTime;
-//	struct tm *stTempTime;
-//	struct tm pTm2;
-//	char CurrentDate[8 + 1];
-//
-//	localTime = time(&localTime);
-//#if defined(_AIX) || defined(__hpux) || defined(__GNUC__)
-//	struct timeval tv;
-//	stTempTime = localtime_r(&tv.tv_sec, &pTm2);
-//#elif defined(_OS390) || defined(_OS400)
-//	stTempTime = localtime_r(&localTime, &pTm2);
-//#elif  defined(WIN32)
-//	stTempTime = localtime(&localTime);
-//
-//#endif
-//
-//
-//	sprintf((char *)CurrentDate, "%4d%02d%02d",
-//		stTempTime->tm_year + 1900, stTempTime->tm_mon + 1, stTempTime->tm_mday, stTempTime->tm_hour,
-//		stTempTime->tm_min, stTempTime->tm_sec);
-//
-//	memcpy(DateBuffer, (char *)CurrentDate, sizeof(CurrentDate));
-//	return;
-//}
-
-//char* CreateVersionString(char *lpszDateTime) {
-//	time_t localTime;
-//	struct tm *stTempTime;
-//	struct tm pTm2;
-//	localTime = time(&localTime);
-//
-//#ifdef WIN32
-//	stTempTime = localtime(&localTime);
-//#else
-//	stTempTime = localtime_r(&localTime, &pTm2);
-//#endif
-//	sprintf(lpszDateTime
-//		, "%4d%02d%02d%02d%02d%02d"
-//		, stTempTime->tm_year + 1900
-//		, stTempTime->tm_mon + 1
-//		, stTempTime->tm_mday
-//		, stTempTime->tm_hour
-//		, stTempTime->tm_min
-//		, stTempTime->tm_sec);
-//
-//	return lpszDateTime;
-//}
-//
-//char* GetSysEnv(char* ObjectName) {
-//
-//	if (!ObjectName)
-//		return NULL;
-//
-//	return (getenv(ObjectName));
-//}
-//
-//long McRandom(long Range) {
-//	long r = 0;
-//
-//#ifdef _WIN32
-//	time_t localTime;
-//	//	LARGE_INTEGER start,end,frequency;
-//	//	LONGLONG	m_llTimer;
-//
-//	time(&localTime);
-//
-//	r = (long)localTime % Range;
-//
-//#else
-//	struct timeval stamp;
-//
-//	stamp.tv_usec = 0;
-//	gettimeofday(&stamp, NULL);
-//
-//	r = stamp.tv_usec % Range;
-//
-//#endif
-//
-//	return r;
-//
-//}
-
-
-/*       Check                                 */
-/*  sbuf  : Check ?       string buffer          */
-/*  n     :                                       */
-/* RETURN VALUE :    ?  1,  ??  0              */
-/*------------------------------------------------*/
 long mIsAlpha(char *buf, long n) {
 	long i;
 
@@ -875,159 +788,11 @@ long mIsNumeric(char *buf, long n) {
 	}
 	return (1);
 }
-//unsigned char *Base64Encode(const unsigned char *str, int length, int *ret_length) {
-//	const unsigned char *current = str;
-//	int i = 0;
-//	unsigned char *result = (unsigned char *)malloc(((length + 3 - length % 3) * 4 / 3 + 1) * sizeof(char));
-//	while (length > 2) {
-//		result[i++] = Base64Table[current[0] >> 2];
-//		result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-//		result[i++] = Base64Table[((current[1] & 0x0f) << 2) + (current[2] >> 6)];
-//		result[i++] = Base64Table[current[2] & 0x3f];
-//
-//		current += 3;
-//		length -= 3;
-//	}
-//
-//	if (length != 0) {
-//		result[i++] = Base64Table[current[0] >> 2];
-//		if (length > 1) {
-//			result[i++] = Base64Table[((current[0] & 0x03) << 4) + (current[1] >> 4)];
-//			result[i++] = Base64Table[(current[1] & 0x0f) << 2];
-//			result[i++] = Base64Pad;
-//		}
-//		else {
-//			result[i++] = Base64Table[(current[0] & 0x03) << 4];
-//			result[i++] = Base64Pad;
-//			result[i++] = Base64Pad;
-//		}
-//	}
-//	if (ret_length) {
-//		*ret_length = i;
-//	}
-//	result[i] = '\0';
-//	return result;
-//}
 
-//unsigned char *Base64Decode(const unsigned char *str, int length, int *ret_length) {
-//	const unsigned char *current = str;
-//	int ch, i = 0, j = 0, k;
-//	static short reverse_table[BASESIZE];
-//	static int table_built;
-//	unsigned char *result;
-//
-//	if (++table_built == 1) {
-//		char *chp;
-//		for (ch = 0; ch < BASESIZE; ch++) {
-//			chp = strchr(Base64Table, ch);
-//			if (chp) {
-//				reverse_table[ch] = chp - Base64Table;
-//			}
-//			else {
-//				reverse_table[ch] = -1;
-//			}
-//		}
-//	}
-//
-//	result = (unsigned char *)malloc(length + 1);
-//	if (result == NULL) {
-//		return NULL;
-//	}
-//
-//	while ((ch = *current++) != '\0') {
-//		if (ch == Base64Pad) break;
-//		if (ch == ' ') ch = '+';
-//
-//		ch = reverse_table[ch];
-//		if (ch < 0) continue;
-//
-//		switch (i % 4) {
-//		case 0:
-//			result[j] = ch << 2;
-//			break;
-//		case 1:
-//			result[j++] |= ch >> 4;
-//			result[j] = (ch & 0x0f) << 4;
-//			break;
-//		case 2:
-//			result[j++] |= ch >> 2;
-//			result[j] = (ch & 0x03) << 6;
-//			break;
-//		case 3:
-//			result[j++] |= ch;
-//			break;
-//		}
-//		i++;
-//	}
-//
-//	k = j;
-//
-//	if (ch == Base64Pad) {
-//		switch (i % 4) {
-//		case 0:
-//		case 1:
-//			free(result);
-//			return NULL;
-//		case 2:
-//			k++;
-//		case 3:
-//			result[k++] = 0;
-//		}
-//	}
-//	if (ret_length) {
-//		*ret_length = j;
-//	}
-//	result[k] = '\0';
-//	return result;
-//}
 #ifndef _BRMLIB
 
 
 #ifndef _TESTER
-//modified by DSKIM 2016.11.23: AES256   
-//int aes_init256(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
-//{
-//	EVP_CIPHER_CTX_init(e_ctx);
-//	EVP_EncryptInit_ex(e_ctx, EVP_aes_256_cbc(), NULL, key, iv);
-//	EVP_CIPHER_CTX_init(d_ctx);
-//	EVP_DecryptInit_ex(d_ctx, EVP_aes_256_cbc(), NULL, key, iv);
-//
-//	return 0;
-//}
-//int aes_init128(unsigned char* key, unsigned char* iv, EVP_CIPHER_CTX * e_ctx, EVP_CIPHER_CTX * d_ctx)
-//{
-//	EVP_CIPHER_CTX_init(e_ctx);
-//	EVP_EncryptInit_ex(e_ctx, EVP_aes_128_cbc(), NULL, key, iv);
-//	EVP_CIPHER_CTX_init(d_ctx);
-//	EVP_DecryptInit_ex(d_ctx, EVP_aes_128_cbc(), NULL, key, iv);
-//
-//	return 0;
-//}
-//
-//unsigned char* aes_encrypt(EVP_CIPHER_CTX* e, unsigned char* plaintext, int* len)
-//{
-//	int c_len = *len + AES_BLOCK_SIZE, f_len = 0;
-//	unsigned char *ciphertext = (unsigned char *)malloc(c_len);
-//
-//	EVP_EncryptInit_ex(e, NULL, NULL, NULL, NULL);
-//	EVP_EncryptUpdate(e, ciphertext, &c_len, plaintext, *len);
-//	EVP_EncryptFinal_ex(e, ciphertext + c_len, &f_len);
-//
-//	*len = c_len + f_len;
-//	return ciphertext;
-//}
-//
-//unsigned char* aes_decrypt(EVP_CIPHER_CTX* e, unsigned char* ciphertext, int* len)
-//{
-//	int p_len = *len, f_len = 0;
-//	unsigned char *plaintext = (unsigned char *)malloc(p_len);
-//
-//	EVP_DecryptInit_ex(e, NULL, NULL, NULL, NULL);
-//	EVP_DecryptUpdate(e, plaintext, &p_len, ciphertext, *len);
-//	EVP_DecryptFinal_ex(e, plaintext + p_len, &f_len);
-//
-//	*len = p_len + f_len;
-//	return plaintext;
-//}
+
 #endif
 #endif

@@ -36,10 +36,10 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <zlib.h>
-#include <jansson.h>
 #include <utime.h>
 
 #define MAX_PATH 260
+
 
 //struct FileNode {
 //	char filePath[1024];
