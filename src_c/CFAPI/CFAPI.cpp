@@ -964,8 +964,8 @@ void CFAPI::API41_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer2, int m_itemC
 		return;
 	}
 
-	int num_include = filterInCount>0 ? sizeof(filter_include) / sizeof(filter_include[0]) : 0;
-	int num_ignore = filterIgCount>0 ? sizeof(filter_ignore) / sizeof(filter_ignore[0]) : 0;
+	int num_include = filterInCount;
+	int num_ignore = filterIgCount;
 
 	int appendedCount = 0;
 	fprintf(fw, "[");
@@ -1135,8 +1135,8 @@ void CFAPI::API40_SCANDIR_TO_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pCh
 		return;
 	}
 	// 1. get directory info and write right away
-	int num_include = filterInCount>0 ? sizeof(filter_include) / sizeof(filter_include[0]) : 0;
-	int num_ignore = filterIgCount>0 ? sizeof(filter_ignore) / sizeof(filter_ignore[0]) : 0;
+	int num_include = filterInCount;
+	int num_ignore = filterIgCount;
 
 	scan_directory_info(targetPath, targetPath, fw, filter_include, filter_ignore, num_include,  num_ignore);
 	fflush(fw);

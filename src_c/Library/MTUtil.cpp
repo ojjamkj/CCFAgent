@@ -349,7 +349,7 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 			//char errorMsg[200];
 			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
 
-			printf("cur path : %s", path);
+			printf("cur path : %s\n", path);
 
 			struct stat file_stat;
 			if (stat(path, &file_stat) == 0) {
@@ -369,7 +369,7 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 				if(!dir){
 					(*currentCount)++;
 
-					if( *currentCount < startRow )
+					if( *currentCount <= startRow )
 					{
 						continue;
 					}
@@ -385,7 +385,7 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 					(*allFileSize)+=filesize;
 
 					fprintf(fw, "\"%s\",", path);
-					printf("added file : %s", path);
+					printf("added file : %s \n", path);
 				}else {
 					DIR* new_dir = opendir(path);
 					if (new_dir) {
@@ -397,7 +397,7 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 				}
 			}
     	}
-    	printf("%d  %d", top, currentStack);
+    	printf("%d  %d\n", top, currentStack);
     	closedir(current_dir);
     }
 
@@ -563,7 +563,9 @@ bool match_filters(const char *source, char **filter_include, char **filter_igno
     if (source[strlen(source) - 1] != '/') {
         // Check for ignore filters first
         for (int i = 0; i < num_ignore; i++) {
+        	printf("ignore filter %s %s \n" , source, filter_ignore[i]);
             if (match(source, filter_ignore[i], is_case_sensitive)) {
+            	printf("ignore filter matched. %s %s \n" , source, filter_ignore[i]);
                 return false;
             }
         }
@@ -572,7 +574,9 @@ bool match_filters(const char *source, char **filter_include, char **filter_igno
     // Check for include filters
     for (int i = 0; i < num_include; i++) {
         default_case = false;
+        printf("include filter %i,  %s,  %s,  \n" , i,  source, filter_include[i]);
         if (match(source, filter_include[i], is_case_sensitive)) {
+        	printf("include filter matched. %i, %s, %s, \n" , i, source, filter_include[i]);
             return true;
         }
     }
