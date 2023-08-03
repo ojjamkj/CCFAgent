@@ -29,7 +29,7 @@ public class CFAPI5J {
 	public int callCount = 0;
 	public OutputStream out = null;
 //	public static int maxParamSize = 2048000;  //1048576;
-	public static int maxParamSize = 1024000000;  //1048576;
+	public static int maxParamSize = 10000000;  //1048576;
 	public byte[] inByteStream = null;
 	public byte[] tempStream = null;
 
@@ -817,9 +817,9 @@ public class CFAPI5J {
 				clientSocktemp=null;
 				throw(e);
 		}finally{
-//			if( clientSocktemp!=null){
-//				ins = clientSocktemp.getInputStream();
-//			}
+			if( clientSocktemp!=null){
+				ins = clientSocktemp.getInputStream();
+			}
 			
 		}
 		 return clientSocktemp;

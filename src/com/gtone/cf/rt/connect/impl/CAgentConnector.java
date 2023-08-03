@@ -273,13 +273,13 @@ public class CAgentConnector extends AbstractConnector {
 			conn.WriteString( (String) param.get("TARGET_PATH") );
 			conn.WriteString( (String) param.get("START_ROW") );
 			
-			ArrayList<String> list = (ArrayList)param.get("INC_FILTER");
+			ArrayList<String> list = (ArrayList)param.get("INCLUDE_FILTER");
 			conn.WriteString( ""+list.size());
 			for(String m: list) {
 				conn.WriteString(m);
 			}
 			
-			list = (ArrayList)param.get("EXC_FILTER");
+			list = (ArrayList)param.get("IGNORE_FILTER");
 			conn.WriteString( ""+list.size());
 			for(String m: list) {
 				conn.WriteString(m);
@@ -314,7 +314,7 @@ public class CAgentConnector extends AbstractConnector {
 						}
 						
 						String filePath = (String)viewDirList.get(i);
-						param.put("TARGET_FILE1", filePath);
+						//param.put("TARGET_FILE1", filePath);
 						
 						
 						FileModel fileModel = this.CMD_VIEWFILE(param, filePath, remoteTargetRootPath);
@@ -602,7 +602,7 @@ public class CAgentConnector extends AbstractConnector {
 				resultCmd = CMD_DELTEFILE(conn,param,cmd);
 				break;
 			case BaseCommand.CMD_DOSEARCH_ONLY_FILE:
-				if(param.containsKey("INC_FILTER")) {
+				if(param.containsKey("INCLUDE_FILTER")) {
 					conn.Initialize("41");
 					resultCmd = CMD_DOSEARCH_ONLY_FILE_COLLECT(conn,param,cmd);
 				}else {
