@@ -20,7 +20,7 @@ INC_PATH	=  -I"$(DIR_INC)"  $(ORA_INC)
 INC_PATH        = -I"$(DIR_INC)"  $(ORA_INC) -I"/usr/include/oracle/11.2/client64/"
 
 ORA_PATH=$(ORACLE_HOME)/precomp
-ORA_LIB=  -L $(DIR_HOME)/lib/LINUX/ -lcrypto
+ORA_LIB=  -L $(DIR_HOME)/lib/LINUX/
  
  
 #HP 
@@ -42,7 +42,7 @@ Metis4RL_CF=-m64  -g -c  -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_R
 LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent -lelf -lsocket -ldl
 LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent -lelf -ldl -lnsl  -lm 
 
-LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent  -lpthread -lssl -lcrypto -lnsl -lm -ljansson -L/usr/local/lib 
+LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent  -lpthread -lssl -lnsl -lm -ljansson -L/usr/local/lib 
 
 #AIX
 #COMP	= xlC_r
@@ -52,11 +52,11 @@ LNK_CF=-m64   -O -o $(DIR_OUT)/cfagent  -lpthread -lssl -lcrypto -lnsl -lm -ljan
 LIBS=$(ORA_LIB)   
 
 #linux 
-LIBS=$(ORA_LIB) -ldl -lpthread -ljansson
+LIBS=$(ORA_LIB) -ldl -lpthread
 COMP=g++
 LINK=g++
 LNK_CF=-m64 -O -o $(DIR_OUT)/cfagent -lz
-Metis4RL_CF=-g -c  -m64 -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_REENTRANT $(INC_PATH) -Wpointer-arith -Wno-write-strings -g -Wno-format-security -lpthread -ljansson
+Metis4RL_CF=-g -c  -m64 -D__GNUC__ -D_RUNNER -D_TRACE -D_USE_CTX -D_ORACLE -D_REENTRANT $(INC_PATH) -Wpointer-arith -Wno-write-strings -g -Wno-format-security -lpthread
 
 OBJS=BREXDiag.o \
 	CFAPI.o \
