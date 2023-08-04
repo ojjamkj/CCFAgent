@@ -40,6 +40,26 @@ const char* getFileNameFromPath(const char* path) {
     return last_sep ? last_sep + 1 : path;
 }
 
+void replaceDoubleSlash(char *str) {
+    char *src = str;
+    char *dst = str;
+    bool prevSlash = false;
+
+    while (*src != '\0') {
+        if (*src == '/' && prevSlash) {
+            // Skip the second slash in consecutive slashes
+            src++;
+        } else {
+            *dst = *src;
+            prevSlash = (*src == '/');
+            src++;
+            dst++;
+        }
+    }
+
+    *dst = '\0'; // Add null terminator at the end
+}
+
 char* get_file_info(const char* path, char* msg) {
 	struct stat fileInfo;
 	int read=0;
@@ -218,6 +238,17 @@ int get_directory_info(const char* dir_path, FILE *fw, int includeSub, int defau
     strcpy(stack[top].path, dir_path);
 
     int currentStack=0;
+    char errorMsg[200];
+
+    if(includeMode==1){ //only dir
+    	char* json_str = get_file_info(dir_path, errorMsg);
+
+    	if(json_str==NULL){
+    		return false;
+    	}
+    	fprintf(fw, "%s,", json_str);
+    	free(json_str);
+    }
 
 	while (top >= currentStack) {
 		DIR* current_dir = stack[currentStack].dir;
@@ -239,8 +270,10 @@ int get_directory_info(const char* dir_path, FILE *fw, int includeSub, int defau
 			}
 
 			char path[PATH_MAX];
-			char errorMsg[200];
+
 			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
+			replaceDoubleSlash(path);
+
 			struct stat file_stat;
 			if (stat(path, &file_stat) == 0) {
 				int dir = 0;
@@ -264,17 +297,14 @@ int get_directory_info(const char* dir_path, FILE *fw, int includeSub, int defau
 
 				if(( dir && (includeMode==0 || includeMode==1) ) || (!dir && (includeMode==0 || includeMode==2)) ){
 
-					if(includeMode==0){
-						char* json_str = get_file_info(path, errorMsg);
+					char* json_str = get_file_info(path, errorMsg);
 
-						if(json_str==NULL){
-							return false;
-						}
-						fprintf(fw, "%s,", json_str);
-						free(json_str);
-					}else{
-						fprintf(fw, "\"%s\",", path);
+					if(json_str==NULL){
+						return false;
 					}
+					fprintf(fw, "%s,", json_str);
+					free(json_str);
+
 					(*appendedCount)++;
 				}
 
@@ -346,10 +376,10 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 			}
 
 			char path[PATH_MAX];
-			//char errorMsg[200];
+			char errorMsg[200];
 			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
-
-			printf("cur path : %s", path);
+			replaceDoubleSlash(path);
+			printf("cur path : %s\n", path);
 
 			struct stat file_stat;
 			if (stat(path, &file_stat) == 0) {
@@ -369,7 +399,7 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 				if(!dir){
 					(*currentCount)++;
 
-					if( *currentCount < startRow )
+					if( *currentCount <= startRow )
 					{
 						continue;
 					}
@@ -384,20 +414,37 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 
 					(*allFileSize)+=filesize;
 
-					fprintf(fw, "\"%s\",", path);
-					printf("added file : %s", path);
+					char* json_str = get_file_info(path, errorMsg);
+
+					if(json_str==NULL){
+						return false;
+					}
+					fprintf(fw, "%s,", json_str);
+					free(json_str);
+
+					printf("added file : %s \n", path);
 				}else {
-					DIR* new_dir = opendir(path);
+					char* json_str = get_file_info(path, errorMsg);
+
+					if(json_str==NULL){
+						return false;
+					}
+					fprintf(fw, "%s,", json_str);
+					free(json_str);
+
+					printf("added dir : %s \n", path);
+					//하위 포함 하지 않음
+					/*DIR* new_dir = opendir(path);
 					if (new_dir) {
 						stack[++top].dir = new_dir;
 						strcpy(stack[top].path, path);
 
 						printf("%d %s: \n", top, stack[top].path);
-					}
+					}*/
 				}
 			}
     	}
-    	printf("%d  %d", top, currentStack);
+    	printf("%d  %d\n", top, currentStack);
     	closedir(current_dir);
     }
 
@@ -441,6 +488,7 @@ int scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, c
 			char path[PATH_MAX];
 			//char errorMsg[200];
 			snprintf(path, sizeof(path), "%s/%s", current_path, entry->d_name);
+			replaceDoubleSlash(path);
 			struct stat file_stat;
 			if (stat(path, &file_stat) == 0) {
 				int dir = 0;
@@ -460,7 +508,7 @@ int scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, c
 					int write = file_stat.st_mode & S_IWUSR ? 1 : 0;
 					//        	int execute = file_stat.st_mode & S_IXUSR ? 1 : 0;
 					const char* filename = getFileNameFromPath(path);
-					char crc32_hex_string[9];
+					char crc32_hex_string[8];
 					if(read)
 						convertToHexString(crc32_hex_string, calculateCRC32(path));
 
@@ -468,7 +516,7 @@ int scan_directory_info(const char* root_path, const char* dir_path, FILE *fw, c
 
 					int result = asprintf(&jsonStr,
 							"{\"NAME\":\"%s\",\"PATH\":\"%s\",\"RELPATH\":\"%s\",\"ROOTPATH\":\"%s\",\"CHECKSUM\":\"%s\",\"SIZE\":%lld,\"ISDIR\":%i,\"MDATE\":%ld,\"READ\":%i,\"WRITE\":%i, \"ERRMSG\":\"%s\" }",
-							filename, path, get_relative_path(path, root_path), "", crc32_hex_string, file_stat.st_size, dir, (long)file_stat.st_mtime, read, write, (read? "" : "can't read" ));
+							filename, path, get_relative_path(path, root_path), "", crc32_hex_string, file_stat.st_size, dir, (long)file_stat.st_mtime*1000, read, write, (read? "" : "can't read" ));
 
 					if (result == -1) {
 						printf("Failed to allocate memory for JSON string");
@@ -563,7 +611,9 @@ bool match_filters(const char *source, char **filter_include, char **filter_igno
     if (source[strlen(source) - 1] != '/') {
         // Check for ignore filters first
         for (int i = 0; i < num_ignore; i++) {
+        	printf("ignore filter %s %s \n" , source, filter_ignore[i]);
             if (match(source, filter_ignore[i], is_case_sensitive)) {
+            	printf("ignore filter matched. %s %s \n" , source, filter_ignore[i]);
                 return false;
             }
         }
@@ -572,7 +622,9 @@ bool match_filters(const char *source, char **filter_include, char **filter_igno
     // Check for include filters
     for (int i = 0; i < num_include; i++) {
         default_case = false;
+        printf("include filter %i,  %s,  %s,  \n" , i,  source, filter_include[i]);
         if (match(source, filter_include[i], is_case_sensitive)) {
+        	printf("include filter matched. %i, %s, %s, \n" , i, source, filter_include[i]);
             return true;
         }
     }
@@ -590,15 +642,43 @@ const char* get_relative_path(const char* filePath, const char* rootPath ) {
 		// If 'rootPath' is found in 'filePath', move 'relativePath' to the position after 'rootPath'
 		relativePath += strlen(rootPath);
 
+		// Check if 'relativePath' starts with a slash '/'
+		if (*relativePath == '/') {
+			return relativePath+1; // Return the substring starting with the slash
+		}
+
 		return relativePath;
 	}
 
-	return "/";
+	return "";
 }
 
+void trim(char *str) {
+    int len = strlen(str);
 
+    // Trim leading spaces
+    int start = 0;
+    while (isspace(str[start])) {
+        start++;
+    }
+
+    // Trim trailing spaces
+    int end = len - 1;
+    while (end >= 0 && isspace(str[end])) {
+        end--;
+    }
+
+    // Adjust the end to the actual content in the string
+    end++;
+
+    // Move the content to the beginning of the string
+    memmove(str, str + start, end - start);
+    str[end - start] = '\0';
+}
 void convertToHexString(char *output, unsigned long value) {
-     sprintf(output, "%08lx", value);
+     sprintf(output, "%8lx", value);
+
+     trim(output);
 }
 unsigned long calculateCRC32(const char *file_path) {
     FILE *file = fopen(file_path, "rb");

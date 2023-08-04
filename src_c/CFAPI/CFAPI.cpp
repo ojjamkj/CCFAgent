@@ -96,6 +96,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 	m_ObjBuffer->ReadString(temp);//
 	if (strcmp(temp, "Y") == 0) {
 		includeSub = 1;
+		includeMode = 2; //only file
 	}
 
 	sprintf(logMsgTemp, "param3: INCLUDE_SUB_DIR [%s]\n", temp);
@@ -397,7 +398,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 	// 3. set last modified date of created file
 	size_t modifiedDateLength = strlen(fileLastModifiedDate);
-	if(modifiedDateLength){
+	if(modifiedDateLength > 0 ){
 		struct utimbuf new_times;
 
 		char* endptr;
@@ -429,7 +430,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 	// 4. set last modified date of created file
 	size_t filePermissionLength = strlen(filePermission);
-	if(filePermissionLength){
+	if(filePermissionLength > 0){
 		int octal_permissions = strtol(filePermission, NULL, 8);
 
 		//		mode_t new_permissions = strtol(filePermission, NULL, 8);
@@ -964,8 +965,8 @@ void CFAPI::API41_DOSEARCH_ONLY_FILE_COLLECT(CBRMObj  *m_ObjBuffer2, int m_itemC
 		return;
 	}
 
-	int num_include = filterInCount>0 ? sizeof(filter_include) / sizeof(filter_include[0]) : 0;
-	int num_ignore = filterIgCount>0 ? sizeof(filter_ignore) / sizeof(filter_ignore[0]) : 0;
+	int num_include = filterInCount;
+	int num_ignore = filterIgCount;
 
 	int appendedCount = 0;
 	fprintf(fw, "[");
@@ -1135,8 +1136,8 @@ void CFAPI::API40_SCANDIR_TO_FILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pCh
 		return;
 	}
 	// 1. get directory info and write right away
-	int num_include = filterInCount>0 ? sizeof(filter_include) / sizeof(filter_include[0]) : 0;
-	int num_ignore = filterIgCount>0 ? sizeof(filter_ignore) / sizeof(filter_ignore[0]) : 0;
+	int num_include = filterInCount;
+	int num_ignore = filterIgCount;
 
 	scan_directory_info(targetPath, targetPath, fw, filter_include, filter_ignore, num_include,  num_ignore);
 	fflush(fw);
