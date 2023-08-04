@@ -96,6 +96,7 @@ void CFAPI::API04_VIEWDIR(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, 
 	m_ObjBuffer->ReadString(temp);//
 	if (strcmp(temp, "Y") == 0) {
 		includeSub = 1;
+		includeMode = 2; //only file
 	}
 
 	sprintf(logMsgTemp, "param3: INCLUDE_SUB_DIR [%s]\n", temp);
@@ -397,7 +398,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 	// 3. set last modified date of created file
 	size_t modifiedDateLength = strlen(fileLastModifiedDate);
-	if(modifiedDateLength){
+	if(modifiedDateLength > 0 ){
 		struct utimbuf new_times;
 
 		char* endptr;
@@ -429,7 +430,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 	// 4. set last modified date of created file
 	size_t filePermissionLength = strlen(filePermission);
-	if(filePermissionLength){
+	if(filePermissionLength > 0){
 		int octal_permissions = strtol(filePermission, NULL, 8);
 
 		//		mode_t new_permissions = strtol(filePermission, NULL, 8);
