@@ -395,7 +395,6 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 					}
 				}
 
-
 				if(!dir){
 					(*currentCount)++;
 
@@ -403,7 +402,6 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 					{
 						continue;
 					}
-
 
 					int filesize = (int)file_stat.st_size;
 
@@ -424,6 +422,13 @@ int get_files_info(const char* root_path, const char* dir_path, FILE *fw, int st
 
 					printf("added file : %s \n", path);
 				}else {
+					(*currentCount)++;
+
+					if( *currentCount <= startRow )
+					{
+						continue;
+					}
+
 					char* json_str = get_file_info(path, errorMsg);
 
 					if(json_str==NULL){

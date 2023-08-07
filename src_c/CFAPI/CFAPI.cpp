@@ -611,9 +611,16 @@ void CFAPI::API28_DELETEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 
 	_WriteLog(_LOG_LOG, "[CMD_DELETEFILE ==> end to display params] \n");
 
-	int status = remove(filePath);
-	sprintf(logMsgTemp, "remove file status [%d]\n", status);
-	_WriteLog(_LOG_LOG, logMsgTemp);
+	int status = -1;
+	if (access(filePath, F_OK) == 0) {
+		status = remove(filePath);
+		sprintf(logMsgTemp, "remove file(%s) status [%d]\n", filePath, status);
+		_WriteLog(_LOG_LOG, logMsgTemp);
+	}else{
+		status = 0;
+		sprintf(logMsgTemp, "File does not exist. ignore remove [%s]\n", filePath);
+		_WriteLog(_LOG_LOG, logMsgTemp);
+	}
 
 	if (status == 0) {
 		m_ObjBuffer->Clear1();
