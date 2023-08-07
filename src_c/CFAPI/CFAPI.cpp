@@ -215,8 +215,8 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 
 		// final result
 		m_ObjBuffer->WriteString("false"); //result
-		m_ObjBuffer->WriteString("파일 속성 정보를 읽을 수 없습니다."); //message
-		_WriteLog(_LOG_ERR, "[CMD_VIEWFILE ==> 파일 속성 정보를 읽을 수 없습니다.] \n");
+		m_ObjBuffer->WriteString("can't read file's attributes."); //message
+		_WriteLog(_LOG_LOG, "[CMD_VIEWFILE ==> can't read file's attributes.] \n");
 
 		return;
 	}
@@ -229,8 +229,8 @@ void CFAPI::API06_VIEWFILE6(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc
 
 		// final result
 		m_ObjBuffer->WriteString("false"); //result
-		m_ObjBuffer->WriteString("파일을 열 수 없습니다."); //message
-		_WriteLog(_LOG_ERR, "[CMD_VIEWFILE ==> 파일을 열 수 없습니다.] \n");
+		m_ObjBuffer->WriteString("can't open file."); //message
+		_WriteLog(_LOG_LOG, "[CMD_VIEWFILE ==> can't open file.] \n");
 
 		return;
 	}
@@ -373,7 +373,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 		// final result
 		m_ObjBuffer->WriteString("false"); //result
 		m_ObjBuffer->WriteString(temp); //message
-		_WriteLog(_LOG_ERR, temp);
+		_WriteLog(_LOG_LOG, temp);
 
 		return;
 	}
@@ -414,7 +414,7 @@ void CFAPI::API07_CREATEFILE(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSo
 			_WriteLog(_LOG_LOG, logMsgTemp);
 		} else {
 			sprintf(logMsgTemp, "Error while setting file modification date. [%s]\n", filePath);
-			_WriteLog(_LOG_ERR, logMsgTemp);
+			_WriteLog(_LOG_LOG, logMsgTemp);
 
 			m_ObjBuffer->Clear1();
 			m_ObjBuffer->WriteLong((long)0);
@@ -521,7 +521,7 @@ void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CC
         // final result
         m_ObjBuffer->WriteString("false"); //result
         m_ObjBuffer->WriteString("Failed to run the command."); //message
-        _WriteLog(_LOG_ERR, "Failed to run the command.\n");
+        _WriteLog(_LOG_LOG, "Failed to run the command.\n");
         return;
     }
 
@@ -546,7 +546,7 @@ void CFAPI::API15_BUILD(CBRMObj  *m_ObjBuffer2, int m_itemCnt, int pChildSoc, CC
             // final result
             m_ObjBuffer->WriteString("false"); //result
             m_ObjBuffer->WriteString("Memory allocation failed."); //message
-            _WriteLog(_LOG_ERR, "Memory allocation failed.\n");
+            _WriteLog(_LOG_LOG, "Memory allocation failed.\n");
             return;
         }
 
